@@ -1,13 +1,11 @@
-import RoomService, {
-  Field,
-  GameUpdateData,
-  Player,
-} from '../game/RoomService';
+import RoomService, { Player, RoomData } from '../game/RoomService';
 import { ref } from 'vue';
 
 let service = null as RoomService | null;
 
-const players = ref([] as Player[]);
+const players = ref({} as Record<string, Player>);
+
+const controllingPlayerId = ref('');
 
 const destroyService = () => {
   console.log('destroying room service');
@@ -17,24 +15,25 @@ const destroyService = () => {
   service = null;
 };
 
-const useRoomService = (roomId?: string) => {
+const useRoomService = (playerName: string, roomId?: string) => {
   if (roomId) {
     if (service === null) {
-      service = new RoomService(roomId);
+      service = new RoomService(playerName, roomId);
     }
 
     service.connect();
 
-    service.on('room_info', () => {
-      players.value = service?.getPlayers() || [];
+    service.on('room_info', (payload: RoomData) => {
+      players.value = service?.getPlayers() || {};
+      controllingPlayerId.value = payload.you.id;
     });
 
     service.on('room_player_join', () => {
-      players.value = service?.getPlayers() || [];
+      players.value = service?.getPlayers() || {};
     });
 
     service.on('room_player_leave', () => {
-      players.value = service?.getPlayers() || [];
+      players.value = service?.getPlayers() || {};
     });
   }
 
@@ -42,6 +41,7 @@ const useRoomService = (roomId?: string) => {
     service,
     destroyService,
     players,
+    controllingPlayerId,
   };
 };
 

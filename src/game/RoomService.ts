@@ -12,8 +12,9 @@ interface Room {
   players: Record<string, Player>;
 }
 
-interface RoomData {
+export interface RoomData {
   room: Room;
+  you: Player;
 }
 
 interface PlayerJoinData {
@@ -31,8 +32,27 @@ export interface Field {
 }
 
 export interface GameUpdateData {
-  player: Player;
+  id: string;
   field: Field;
+}
+
+interface Piece {
+  name: string;
+  rotation: number;
+}
+
+export interface FallingPiece {
+  next_piece: Piece;
+  current_piece: Piece;
+  x: number;
+  y: number;
+  speed: number;
+  fall_timer: number;
+}
+
+export interface FallingPieceUpdateData {
+  falling_piece_data: FallingPiece;
+  piece_display: number[];
 }
 
 type EventType =
@@ -41,33 +61,36 @@ type EventType =
   | 'room_player_join'
   | 'room_player_leave'
   | 'room_info'
-  | 'room_player_game_over';
+  | 'room_player_game_over'
+  | 'room_player_update_falling_piece';
 
 interface EventBody<T> {
+  channel: string;
   type: EventType;
-  data: T;
+  payload: T;
 }
 
 export default class RoomService extends EventEmitter<EventType> {
   private readonly roomId: string;
 
+  private readonly playerName: string;
+
   private players: Record<string, Player>;
 
   private socketConn: WebSocket | null;
 
-  constructor(roomId: string) {
+  constructor(playerName: string, roomId: string) {
     super();
 
+    this.playerName = playerName;
     this.roomId = roomId;
     this.players = {};
 
     this.socketConn = null;
   }
 
-  public getPlayers(): Player[] {
-    return [...Object.values(this.players)].sort(
-      (p1, p2) => p1.create_at - p2.create_at,
-    );
+  public getPlayers(): Record<string, Player> {
+    return { ...this.players };
   }
 
   public connect(): void {
@@ -95,8 +118,11 @@ export default class RoomService extends EventEmitter<EventType> {
           case 'ArrowUp':
             this.socketConn?.send('X');
             break;
-          case ' ':
+          case 'ArrowDown':
             this.socketConn?.send('D');
+            break;
+          case ' ':
+            this.socketConn?.send('P');
             break;
         }
       });
@@ -105,8 +131,6 @@ export default class RoomService extends EventEmitter<EventType> {
     this.socketConn.addEventListener(
       'message',
       (event: MessageEvent<string>) => {
-        console.log(event.data.length);
-
         try {
           const msg = JSON.parse(event.data) as EventBody<unknown>;
 
@@ -129,7 +153,7 @@ export default class RoomService extends EventEmitter<EventType> {
         const roomInfoMessage = msg as EventBody<RoomData>;
 
         this.players = {
-          ...roomInfoMessage.data.room.players,
+          ...roomInfoMessage.payload.room.players,
         };
 
         break;
@@ -137,15 +161,15 @@ export default class RoomService extends EventEmitter<EventType> {
       case 'room_player_join': {
         const playerJoinMessage = msg as EventBody<PlayerJoinData>;
 
-        this.players[playerJoinMessage.data.player.id] =
-          playerJoinMessage.data.player;
+        this.players[playerJoinMessage.payload.player.id] =
+          playerJoinMessage.payload.player;
 
         break;
       }
       case 'room_player_leave': {
         const playerLeaveMessage = msg as EventBody<PlayerLeaveData>;
 
-        delete this.players[playerLeaveMessage.data.player.id];
+        delete this.players[playerLeaveMessage.payload.player.id];
 
         break;
       }
@@ -157,7 +181,7 @@ export default class RoomService extends EventEmitter<EventType> {
         break;
     }
 
-    this.emit(msg.type, msg.data);
+    this.emit(msg.type, msg.payload);
   }
 
   public startGame(): Promise<boolean> {
