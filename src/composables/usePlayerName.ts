@@ -1,15 +1,22 @@
-import { ref } from 'vue';
+import { ref, watchEffect } from 'vue';
 
 const playerName = ref('');
+const isConfirmed = ref(false);
 
-const updatePlayerName = (name: string) => {
-  playerName.value = name;
-};
+const lsName = localStorage.getItem('player-name');
+
+if (lsName) {
+  playerName.value = lsName;
+}
+
+watchEffect(() => {
+  localStorage.setItem('player-name', playerName.value);
+});
 
 const usePlayerName = () => {
   return {
     playerName,
-    updatePlayerName,
+    isConfirmed,
   };
 };
 

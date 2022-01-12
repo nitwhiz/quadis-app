@@ -12,16 +12,16 @@ interface Room {
   players: Record<string, Player>;
 }
 
-export interface RoomData {
+export interface HelloAck {
   room: Room;
   you: Player;
 }
 
-interface PlayerJoinData {
+export interface PlayerJoinData {
   player: Player;
 }
 
-interface PlayerLeaveData {
+export interface PlayerLeaveData {
   player: Player;
 }
 
@@ -56,11 +56,12 @@ export interface FallingPieceUpdateData {
 }
 
 type EventType =
+  | 'hello'
+  | 'hello_ack'
   | 'room_player_game_rows_cleared'
   | 'room_player_game_update'
   | 'room_player_join'
   | 'room_player_leave'
-  | 'room_info'
   | 'room_player_game_over'
   | 'room_player_update_falling_piece';
 
@@ -75,22 +76,26 @@ export default class RoomService extends EventEmitter<EventType> {
 
   private readonly playerName: string;
 
-  private players: Record<string, Player>;
-
   private socketConn: WebSocket | null;
+
+  private sentHelloResponse: boolean;
+
+  private started: boolean;
 
   constructor(playerName: string, roomId: string) {
     super();
 
     this.playerName = playerName;
     this.roomId = roomId;
-    this.players = {};
 
     this.socketConn = null;
+
+    this.sentHelloResponse = false;
+    this.started = false;
   }
 
-  public getPlayers(): Record<string, Player> {
-    return { ...this.players };
+  public isStarted(): boolean {
+    return this.started;
   }
 
   public connect(): void {
@@ -106,6 +111,32 @@ export default class RoomService extends EventEmitter<EventType> {
 
     this.socketConn.addEventListener('open', () => {
       console.log('socket open');
+
+      this.socketConn?.addEventListener(
+        'message',
+        (event: MessageEvent<string>) => {
+          if (this.sentHelloResponse) {
+            // todo: remove hello listener
+            return;
+          }
+
+          try {
+            const msg = JSON.parse(event.data) as EventBody<unknown>;
+
+            if (msg.type === 'hello') {
+              this.socketConn?.send(
+                JSON.stringify({
+                  name: this.playerName,
+                }),
+              );
+
+              this.sentHelloResponse = true;
+            }
+          } catch (e) {
+            console.error('unable to process hello', event, e);
+          }
+        },
+      );
 
       document.addEventListener('keydown', (event: KeyboardEvent) => {
         switch (event.key) {
@@ -134,7 +165,7 @@ export default class RoomService extends EventEmitter<EventType> {
         try {
           const msg = JSON.parse(event.data) as EventBody<unknown>;
 
-          this.processSocketMessage(msg);
+          this.emit(msg.type, msg.payload);
         } catch (e) {
           console.error('unable to process message data', event, e);
         }
@@ -147,47 +178,14 @@ export default class RoomService extends EventEmitter<EventType> {
     this.socketConn = null;
   }
 
-  private processSocketMessage(msg: EventBody<unknown>): void {
-    switch (msg.type) {
-      case 'room_info': {
-        const roomInfoMessage = msg as EventBody<RoomData>;
-
-        this.players = {
-          ...roomInfoMessage.payload.room.players,
-        };
-
-        break;
-      }
-      case 'room_player_join': {
-        const playerJoinMessage = msg as EventBody<PlayerJoinData>;
-
-        this.players[playerJoinMessage.payload.player.id] =
-          playerJoinMessage.payload.player;
-
-        break;
-      }
-      case 'room_player_leave': {
-        const playerLeaveMessage = msg as EventBody<PlayerLeaveData>;
-
-        delete this.players[playerLeaveMessage.payload.player.id];
-
-        break;
-      }
-      case 'room_player_game_update':
-        // ignored
-        break;
-      default:
-        console.warn('unknown message', msg);
-        break;
-    }
-
-    this.emit(msg.type, msg.payload);
-  }
-
   public startGame(): Promise<boolean> {
     return axios
       .post(`http://localhost:7000/rooms/${this.roomId}/start`)
-      .then(() => true)
+      .then(() => {
+        this.started = true;
+
+        return true;
+      })
       .catch((reason) => {
         console.log('start request failed:', reason);
 

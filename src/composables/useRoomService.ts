@@ -1,47 +1,56 @@
-import RoomService, { Player, RoomData } from '../game/RoomService';
-import { ref } from 'vue';
+import RoomService, {
+  HelloAck,
+  Player,
+  PlayerJoinData,
+  PlayerLeaveData,
+} from '../bloccs/RoomService';
+import usePlayerName from './usePlayerName';
+import { ref, watch } from 'vue';
 
-let service = null as RoomService | null;
+let roomService: RoomService | null = null;
 
-const players = ref({} as Record<string, Player>);
+const playerData = ref({} as Record<string, Player>);
+const players = ref([] as Player[]);
 
-const controllingPlayerId = ref('');
+const ensureRoomService = (roomId: string) => {
+  const { playerName, isConfirmed } = usePlayerName();
 
-const destroyService = () => {
-  console.log('destroying room service');
+  if (isConfirmed) {
+    if (roomService === null) {
+      roomService = new RoomService(playerName.value, roomId);
 
-  service?.destroy();
+      watch(playerData, () => {
+        players.value = Object.values(playerData.value).sort((pA, pB) => {
+          return pA.create_at - pB.create_at;
+        });
+      });
 
-  service = null;
-};
+      roomService.on('room_player_join', (payload: PlayerJoinData) => {
+        playerData.value[payload.player.id] = payload.player;
+      });
 
-const useRoomService = (playerName: string, roomId?: string) => {
-  if (roomId) {
-    if (service === null) {
-      service = new RoomService(playerName, roomId);
+      roomService.on('room_player_leave', (payload: PlayerLeaveData) => {
+        delete playerData.value[payload.player.id];
+      });
+
+      roomService.on('hello_ack', (payload: HelloAck) => {
+        playerData.value = payload.room.players;
+      });
+
+      roomService.connect();
     }
 
-    service.connect();
-
-    service.on('room_info', (payload: RoomData) => {
-      players.value = service?.getPlayers() || {};
-      controllingPlayerId.value = payload.you.id;
-    });
-
-    service.on('room_player_join', () => {
-      players.value = service?.getPlayers() || {};
-    });
-
-    service.on('room_player_leave', () => {
-      players.value = service?.getPlayers() || {};
-    });
+    return true;
   }
 
+  return false;
+};
+
+const useRoomService = () => {
   return {
-    service,
-    destroyService,
+    ensureRoomService,
+    roomService,
     players,
-    controllingPlayerId,
   };
 };
 

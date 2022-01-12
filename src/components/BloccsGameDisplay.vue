@@ -8,10 +8,11 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, watch, watchEffect } from 'vue';
+import { defineComponent } from 'vue';
 import useRoomService from '../composables/useRoomService';
 import { FallingPieceUpdateData, GameUpdateData } from '../game/RoomService';
 import BloccsGame, { PieceType } from '../bloccs/BloccsGame';
+import usePlayerName from '../composables/usePlayerName';
 
 export default defineComponent({
   props: {
@@ -21,7 +22,9 @@ export default defineComponent({
     },
   },
   setup() {
-    const { service, players, controllingPlayerId } = useRoomService();
+    const { playerName } = usePlayerName();
+    const { service, players, controllingPlayerId } =
+      useRoomService(playerName);
 
     return {
       service,
@@ -44,16 +47,7 @@ export default defineComponent({
 
     const view = this.$refs.canvas as HTMLCanvasElement;
 
-    this.game = new BloccsGame(
-      view,
-      this.playerId === this.controllingPlayerId ? 30 : 10,
-    );
-
-    watchEffect(() => {
-      this.game?.setBlockSize(
-        this.playerId === this.controllingPlayerId ? 30 : 10,
-      );
-    });
+    this.game = new BloccsGame(view, 10);
 
     this.service?.addListener(
       'room_player_game_update',

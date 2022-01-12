@@ -13,7 +13,9 @@ import { defineComponent } from 'vue';
 export default defineComponent({
   computed: {
     headerCls() {
-      return this.$route.name === 'home' ? 'big' : 'small';
+      return ['home', 'room-join'].includes(this.$route.name as string)
+        ? 'big'
+        : 'small';
     },
   },
 });
@@ -40,7 +42,7 @@ body {
   display: flex;
   flex-direction: column;
 
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Press Start 2P', monospace;
   color: #f1f1f1;
 
   background-color: #111111;
@@ -49,10 +51,9 @@ body {
     transition-property: all;
     transition-duration: 300ms;
 
-    padding: 64px;
+    padding: 56px;
 
-    font-family: 'Press Start 2P', monospace;
-    font-size: 120px;
+    font-size: 80px;
 
     display: flex;
     justify-content: center;
