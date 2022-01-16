@@ -1,29 +1,34 @@
-<template>hello bloccs!</template>
+<template>
+  <PlayerCustomization
+    type="create"
+    @confirm="handlePlayerCustomizationConfirmation"
+  />
+</template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
 import axios from 'axios';
-
-interface RoomResponse {
-  roomId: string;
-}
+import PlayerCustomization from '../components/PlayerCustomization.vue';
 
 export default defineComponent({
-  mounted(): void {
-    axios.post<RoomResponse>('http://localhost:7000/rooms').then((response) => {
-      this.$router.replace(`/rooms/${response.data.roomId}`);
-    });
+  components: {
+    PlayerCustomization,
+  },
+  methods: {
+    handlePlayerCustomizationConfirmation() {
+      axios
+        .post(`http://${import.meta.env.VITE_GAME_SERVER}/rooms`)
+        .then((response) => {
+          this.$router.push({
+            name: 'room',
+            params: {
+              roomId: response.data.roomId,
+            },
+          });
+        });
+    },
   },
 });
 </script>
 
-<style lang="scss">
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>
+<style scoped></style>
