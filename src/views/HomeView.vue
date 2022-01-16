@@ -1,5 +1,8 @@
 <template>
-  <PlayerCustomization @confirm="handlePlayerCustomizationConfirmation" />
+  <PlayerCustomization
+    type="create"
+    @confirm="handlePlayerCustomizationConfirmation"
+  />
 </template>
 
 <script lang="ts">
@@ -13,14 +16,16 @@ export default defineComponent({
   },
   methods: {
     handlePlayerCustomizationConfirmation() {
-      axios.post('http://localhost:7000/rooms').then((response) => {
-        this.$router.push({
-          name: 'room',
-          params: {
-            roomId: response.data.roomId,
-          },
+      axios
+        .post(`http://${import.meta.env.VITE_GAME_SERVER}/rooms`)
+        .then((response) => {
+          this.$router.push({
+            name: 'room',
+            params: {
+              roomId: response.data.roomId,
+            },
+          });
         });
-      });
     },
   },
 });

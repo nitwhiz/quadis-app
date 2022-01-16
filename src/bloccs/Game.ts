@@ -5,7 +5,7 @@ export type PieceType = 'I' | 'O' | 'L' | 'J' | 'S' | 'T' | 'Z';
 const DEFAULT_BLOCKS_WIDTH = 10;
 const DEFAULT_BLOCKS_HEIGHT = 20;
 
-export default class BloccsGame {
+export default class Game {
   public readonly app: PIXI.Application;
 
   private blockSize: number;
@@ -169,5 +169,9 @@ export default class BloccsGame {
     }
 
     this.updateFieldGraphics();
+  }
+
+  public start() {
+    return this.app.start();
   }
 }

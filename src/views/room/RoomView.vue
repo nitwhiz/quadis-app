@@ -1,26 +1,38 @@
 <template>
   <div v-if="!isConfirmed" class="player">
-    <PlayerCustomization @confirm="handlePlayerCustomizationConfirmation" />
+    <PlayerCustomization
+      type="join"
+      @confirm="handlePlayerCustomizationConfirmation"
+    />
   </div>
   <div v-else class="room">
     <button @click="roomService.start()">start</button>
-    players:
     <div class="games">
-      <div v-for="p in players" :key="p.id" class="game">
-        <GameDisplay :room-service="roomService" :player="p" />
+      <div v-if="currentPlayer" class="game current-game">
+        <GameDisplay
+          :is-main="true"
+          :room-service="roomService"
+          :player="currentPlayer"
+        />
+      </div>
+      <div class="other-games">
+        <div v-for="p in otherPlayers" :key="p.id" class="game other-game">
+          <GameDisplay
+            :is-main="false"
+            :room-service="roomService"
+            :player="p"
+          />
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
+import { computed, defineComponent, ref } from 'vue';
 import RoomService, {
-  EventMessage,
-  HelloAck,
+  CLIENT_EVENT_UPDATE_PLAYERS,
   Player,
-  PlayerJoinData,
-  PlayerLeaveData,
 } from '../../bloccs/RoomService';
 import usePlayerCustomization from '../../composables/usePlayerCustomization';
 import { useRoute } from 'vue-router';
@@ -36,10 +48,14 @@ export default defineComponent({
     const { params } = useRoute();
     const { playerName, isConfirmed } = usePlayerCustomization();
 
-    const players = ref({} as Record<string, Player>);
+    const players = ref([] as Player[]);
+    const currentPlayer = computed(() => players.value[0] || null);
+    const otherPlayers = computed(() => [...players.value].splice(1));
 
     return {
       players,
+      currentPlayer,
+      otherPlayers,
       roomId: params.roomId as string,
       playerName,
       isConfirmed,
@@ -59,22 +75,8 @@ export default defineComponent({
     handlePlayerCustomizationConfirmation() {
       this.roomService = new RoomService(this.playerName, this.roomId);
 
-      this.roomService.on(
-        'room_player_join',
-        (event: EventMessage<PlayerJoinData>) => {
-          this.players[event.payload.player.id] = event.payload.player;
-        },
-      );
-
-      this.roomService.on(
-        'room_player_leave',
-        (event: EventMessage<PlayerLeaveData>) => {
-          delete this.players[event.payload.player.id];
-        },
-      );
-
-      this.roomService.on('hello_ack', (event: EventMessage<HelloAck>) => {
-        this.players = event.payload.room.players;
+      this.roomService.on(CLIENT_EVENT_UPDATE_PLAYERS, (players: Player[]) => {
+        this.players = players;
       });
 
       this.roomService.connect();
@@ -83,4 +85,30 @@ export default defineComponent({
 });
 </script>
 
-<style scoped></style>
+<style lang="scss" scoped>
+.player {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.games {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+
+  .game {
+    margin: 12px;
+    padding: 12px;
+
+    background-color: #555;
+  }
+
+  .other-games {
+    display: flex;
+    flex-wrap: wrap;
+  }
+}
+</style>
