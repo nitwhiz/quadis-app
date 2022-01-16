@@ -8,5 +8,10 @@ export default createRouter({
       name: 'home',
       component: () => import('./views/HomeView.vue'),
     },
+    {
+      path: '/rooms/:roomId',
+      name: 'room',
+      component: () => import('./views/room/RoomView.vue'),
+    },
   ] as RouteRecordRaw[],
 });

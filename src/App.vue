@@ -1,23 +1,13 @@
 <template>
   <div class="main">
-    <button @click="test"></button>
+    <router-view />
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
 
-export default defineComponent({
-  methods: {
-    test() {
-      this.$router.push({
-        query: {
-          test: '1234',
-        },
-      });
-    },
-  },
-});
+export default defineComponent({});
 </script>
 
 <style lang="scss">

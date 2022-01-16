@@ -6,7 +6,7 @@
         <input v-model="playerName" type="text" name="name" />
       </div>
       <div class="controls">
-        <button @click="$emit('confirm')">confirm</button>
+        <button @click="confirm">confirm</button>
       </div>
     </div>
   </div>
@@ -19,11 +19,18 @@ import usePlayerCustomization from '../composables/usePlayerCustomization';
 export default defineComponent({
   emits: ['confirm'],
   setup() {
-    const { playerName } = usePlayerCustomization();
+    const { playerName, isConfirmed } = usePlayerCustomization();
 
     return {
       playerName,
+      isConfirmed,
     };
+  },
+  methods: {
+    confirm() {
+      this.isConfirmed = true;
+      this.$emit('confirm');
+    },
   },
 });
 </script>
