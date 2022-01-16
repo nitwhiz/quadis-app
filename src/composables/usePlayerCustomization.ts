@@ -10,14 +10,14 @@ if (lsName) {
 }
 
 watchEffect(() => {
-  localStorage.setItem('player-name', playerName.value);
+  localStorage.setItem('playerName', playerName.value);
 });
 
-const usePlayerName = () => {
+const usePlayerCustomization = () => {
   return {
     playerName,
     isConfirmed,
   };
 };
 
-export default usePlayerName;
+export default usePlayerCustomization;
