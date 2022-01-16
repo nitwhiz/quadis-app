@@ -3,10 +3,11 @@
     <PlayerCustomization @confirm="handlePlayerCustomizationConfirmation" />
   </div>
   <div v-else class="room">
-    room.
+    <button @click="roomService.start()">start</button>
+    players:
     <div class="games">
       <div v-for="p in players" :key="p.id" class="game">
-        {{ p.name }}
+        <GameDisplay :room-service="roomService" :player="p" />
       </div>
     </div>
   </div>
@@ -15,6 +16,7 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 import RoomService, {
+  EventMessage,
   HelloAck,
   Player,
   PlayerJoinData,
@@ -23,10 +25,12 @@ import RoomService, {
 import usePlayerCustomization from '../../composables/usePlayerCustomization';
 import { useRoute } from 'vue-router';
 import PlayerCustomization from '../../components/PlayerCustomization.vue';
+import GameDisplay from '../../components/GameDisplay.vue';
 
 export default defineComponent({
   components: {
     PlayerCustomization,
+    GameDisplay,
   },
   setup() {
     const { params } = useRoute();
@@ -41,23 +45,39 @@ export default defineComponent({
       isConfirmed,
     };
   },
+  data() {
+    return {
+      roomService: null as RoomService | null,
+    };
+  },
+  mounted() {
+    if (this.isConfirmed) {
+      this.handlePlayerCustomizationConfirmation();
+    }
+  },
   methods: {
     handlePlayerCustomizationConfirmation() {
-      const roomService = new RoomService(this.playerName, this.roomId);
+      this.roomService = new RoomService(this.playerName, this.roomId);
 
-      roomService.on('room_player_join', (payload: PlayerJoinData) => {
-        this.players[payload.player.id] = payload.player;
+      this.roomService.on(
+        'room_player_join',
+        (event: EventMessage<PlayerJoinData>) => {
+          this.players[event.payload.player.id] = event.payload.player;
+        },
+      );
+
+      this.roomService.on(
+        'room_player_leave',
+        (event: EventMessage<PlayerLeaveData>) => {
+          delete this.players[event.payload.player.id];
+        },
+      );
+
+      this.roomService.on('hello_ack', (event: EventMessage<HelloAck>) => {
+        this.players = event.payload.room.players;
       });
 
-      roomService.on('room_player_leave', (payload: PlayerLeaveData) => {
-        delete this.players[payload.player.id];
-      });
-
-      roomService.on('hello_ack', (payload: HelloAck) => {
-        this.players = payload.room.players;
-      });
-
-      roomService.connect();
+      this.roomService.connect();
     },
   },
 });

@@ -63,9 +63,10 @@ type EventType =
   | 'room_player_join'
   | 'room_player_leave'
   | 'room_player_game_over'
+  | 'room_game_start'
   | 'room_player_update_falling_piece';
 
-interface EventBody<T> {
+export interface EventMessage<T> {
   channel: string;
   type: EventType;
   payload: T;
@@ -121,7 +122,7 @@ export default class RoomService extends EventEmitter<EventType> {
           }
 
           try {
-            const msg = JSON.parse(event.data) as EventBody<unknown>;
+            const msg = JSON.parse(event.data) as EventMessage<unknown>;
 
             if (msg.type === 'hello') {
               this.socketConn?.send(
@@ -163,9 +164,9 @@ export default class RoomService extends EventEmitter<EventType> {
       'message',
       (event: MessageEvent<string>) => {
         try {
-          const msg = JSON.parse(event.data) as EventBody<unknown>;
+          const msg = JSON.parse(event.data) as EventMessage<unknown>;
 
-          this.emit(msg.type, msg.payload);
+          this.emit(msg.type, msg);
         } catch (e) {
           console.error('unable to process message data', event, e);
         }
@@ -178,7 +179,7 @@ export default class RoomService extends EventEmitter<EventType> {
     this.socketConn = null;
   }
 
-  public startGame(): Promise<boolean> {
+  public start(): Promise<boolean> {
     return axios
       .post(`http://localhost:7000/rooms/${this.roomId}/start`)
       .then(() => {
