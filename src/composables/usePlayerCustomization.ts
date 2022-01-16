@@ -3,7 +3,7 @@ import { ref, watchEffect } from 'vue';
 const playerName = ref('');
 const isConfirmed = ref(false);
 
-const lsName = localStorage.getItem('player-name');
+const lsName = localStorage.getItem('playerName');
 
 if (lsName) {
   playerName.value = lsName;

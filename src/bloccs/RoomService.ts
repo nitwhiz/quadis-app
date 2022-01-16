@@ -2,6 +2,8 @@ import EventEmitter from 'eventemitter3';
 import axios from 'axios';
 import Game, { PieceType } from './Game';
 
+// todo: refactor
+
 export interface Player {
   id: string;
   name: string;
@@ -33,12 +35,12 @@ export interface Field {
 }
 
 export interface GameUpdateData {
-  id: string;
   field: Field;
+  score: number;
 }
 
 interface Piece {
-  name: string;
+  name: PieceType;
   rotation: number;
 }
 
@@ -120,7 +122,8 @@ export default class RoomService extends EventEmitter<ClientEventType> {
     this.games[playerId] = game;
   }
 
-  public removeGame(playerId: string) {
+  public destroyGame(playerId: string) {
+    this.games[playerId]?.destroy();
     delete this.games[playerId];
   }
 
@@ -235,6 +238,9 @@ export default class RoomService extends EventEmitter<ClientEventType> {
 
           delete this.players[e.payload.player.id];
 
+          this.games[e.payload.player.id]?.destroy();
+          delete this.games[e.payload.player.id];
+
           this.emit(CLIENT_EVENT_UPDATE_PLAYERS, this.getPlayers());
         }
         break;
@@ -260,6 +266,10 @@ export default class RoomService extends EventEmitter<ClientEventType> {
             e.payload.falling_piece_data.y,
             e.payload.piece_display,
           );
+
+          this.games[playerId]?.setNextFallingPieceType(
+            e.payload.falling_piece_data.next_piece.name as PieceType,
+          );
         }
         break;
       case SERVER_EVENT_GAME_UPDATE:
@@ -272,6 +282,8 @@ export default class RoomService extends EventEmitter<ClientEventType> {
             e.payload.field.height,
             e.payload.field.data,
           );
+
+          this.games[playerId]?.setScore(e.payload.score);
         }
         break;
       default:

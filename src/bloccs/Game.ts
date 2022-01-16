@@ -1,11 +1,162 @@
 import * as PIXI from 'pixi.js';
+import EventEmitter from 'eventemitter3';
 
-export type PieceType = 'I' | 'O' | 'L' | 'J' | 'S' | 'T' | 'Z';
+// todo: refactor
+
+export const PieceI = 'I'.charCodeAt(0);
+export const PieceO = 'O'.charCodeAt(0);
+export const PieceL = 'L'.charCodeAt(0);
+export const PieceJ = 'J'.charCodeAt(0);
+export const PieceS = 'S'.charCodeAt(0);
+export const PieceT = 'T'.charCodeAt(0);
+export const PieceZ = 'Z'.charCodeAt(0);
+
+export type PieceType =
+  | typeof PieceI
+  | typeof PieceO
+  | typeof PieceL
+  | typeof PieceJ
+  | typeof PieceS
+  | typeof PieceT
+  | typeof PieceZ;
 
 const DEFAULT_BLOCKS_WIDTH = 10;
 const DEFAULT_BLOCKS_HEIGHT = 20;
 
-export default class Game {
+export const GAME_EVENT_UPDATE_SCORE = 'update_score';
+
+type GameEventType = typeof GAME_EVENT_UPDATE_SCORE;
+
+const pieceData = {
+  [PieceI]: [
+    0,
+    0,
+    0,
+    0,
+    PieceI,
+    PieceI,
+    PieceI,
+    PieceI,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+  ],
+  [PieceO]: [
+    0,
+    0,
+    0,
+    0,
+    0,
+    PieceO,
+    PieceO,
+    0,
+    0,
+    PieceO,
+    PieceO,
+    0,
+    0,
+    0,
+    0,
+    0,
+  ],
+  [PieceL]: [
+    0,
+    0,
+    0,
+    0,
+    0,
+    PieceL,
+    0,
+    0,
+    0,
+    PieceL,
+    0,
+    0,
+    0,
+    PieceL,
+    PieceL,
+    0,
+  ],
+  [PieceJ]: [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    PieceJ,
+    0,
+    0,
+    0,
+    PieceJ,
+    0,
+    0,
+    PieceJ,
+    PieceJ,
+    0,
+  ],
+  [PieceS]: [
+    0,
+    0,
+    0,
+    0,
+    0,
+    PieceS,
+    PieceS,
+    0,
+    PieceS,
+    PieceS,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+  ],
+  [PieceT]: [
+    0,
+    0,
+    0,
+    0,
+    0,
+    PieceT,
+    0,
+    0,
+    PieceT,
+    PieceT,
+    PieceT,
+    0,
+    0,
+    0,
+    0,
+    0,
+  ],
+  [PieceZ]: [
+    0,
+    0,
+    0,
+    0,
+    PieceZ,
+    PieceZ,
+    0,
+    0,
+    0,
+    PieceZ,
+    PieceZ,
+    0,
+    0,
+    0,
+    0,
+    0,
+  ],
+};
+
+export default class Game extends EventEmitter<GameEventType> {
   public readonly app: PIXI.Application;
 
   private blockSize: number;
@@ -28,15 +179,36 @@ export default class Game {
 
   private readonly colorMap: Record<number, number>;
 
-  constructor(view: HTMLCanvasElement, blockSize: number) {
+  private readonly nextPieceDisplay: HTMLCanvasElement;
+
+  private readonly nextPieceGraphics: PIXI.Graphics;
+
+  private readonly nextPieceRenderer: PIXI.AbstractRenderer;
+
+  constructor(
+    view: HTMLCanvasElement,
+    nextPieceDisplay: HTMLCanvasElement,
+    blockSize: number,
+  ) {
+    super();
+
     this.app = new PIXI.Application({
       view,
       width: DEFAULT_BLOCKS_WIDTH * blockSize,
       height: DEFAULT_BLOCKS_HEIGHT * blockSize,
       backgroundColor: 0x000000,
       autoStart: false,
-      powerPreference: 'low-power',
     });
+
+    this.nextPieceDisplay = nextPieceDisplay;
+    this.nextPieceGraphics = new PIXI.Graphics();
+    this.nextPieceRenderer = PIXI.autoDetectRenderer({
+      view: this.nextPieceDisplay,
+      width: 20 + 15 * 4,
+      height: 20 + 15 * 4,
+    });
+
+    console.debug('new pixi instance');
 
     this.blockSize = blockSize;
 
@@ -53,14 +225,14 @@ export default class Game {
 
     this.colorMap = {};
 
-    this.addColor('I', 0x8eaddb);
-    this.addColor('O', 0xfdd1b4);
-    this.addColor('L', 0xe3efc9);
-    this.addColor('J', 0xabcdd9);
-    this.addColor('S', 0xe4efc9);
-    this.addColor('T', 0xf2929d);
-    this.addColor('Z', 0xc18bbd);
-    this.addColor('X', 0x333333);
+    this.addColor('I', 0x0caee8);
+    this.addColor('O', 0xf2f200);
+    this.addColor('L', 0xffce0d);
+    this.addColor('J', 0xebaf0c);
+    this.addColor('S', 0x0cb14a);
+    this.addColor('T', 0xac0ce8);
+    this.addColor('Z', 0xe82c0c);
+    this.addColor('B', 0x333333);
 
     this.fieldGraphics.x = 0;
     this.fieldGraphics.y = 0;
@@ -69,6 +241,39 @@ export default class Game {
     this.fallingPieceGraphics.y = 0;
 
     this.app.stage.addChild(this.fieldGraphics, this.fallingPieceGraphics);
+  }
+
+  public destroy(): void {
+    console.debug('destroying pixi instance');
+
+    this.app.stop();
+
+    this.app.destroy(false, {
+      baseTexture: true,
+      children: true,
+      texture: true,
+    });
+  }
+
+  public setScore(s: number): void {
+    this.emit(GAME_EVENT_UPDATE_SCORE, s);
+  }
+
+  public setNextFallingPieceType(pieceType: PieceType): void {
+    this.nextPieceGraphics.clear();
+
+    for (let x = 0; x < 4; ++x) {
+      for (let y = 0; y < 4; ++y) {
+        const blockData = pieceData[pieceType][y * 4 + x];
+
+        if (blockData) {
+          this.nextPieceGraphics.beginFill(this.getColor(blockData));
+          this.nextPieceGraphics.drawRect(x * 15 + 10, y * 15 + 10, 15, 15);
+        }
+      }
+    }
+
+    this.nextPieceRenderer.render(this.nextPieceGraphics);
   }
 
   public setBlockSize(size: number): void {
@@ -152,6 +357,20 @@ export default class Game {
           );
         }
       }
+    }
+
+    this.fieldGraphics.lineStyle(1, 0xffffff, 0.1);
+
+    for (let y = 0; y < this.fieldHeight; ++y) {
+      this.fieldGraphics
+        .moveTo(0, y * this.blockSize)
+        .lineTo(this.fieldWidth * this.blockSize, y * this.blockSize);
+    }
+
+    for (let x = 0; x < this.fieldWidth; ++x) {
+      this.fieldGraphics
+        .moveTo(x * this.blockSize, 0)
+        .lineTo(x * this.blockSize, this.fieldHeight * this.blockSize);
     }
   }
 

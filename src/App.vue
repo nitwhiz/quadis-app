@@ -46,6 +46,10 @@ body {
   }
 }
 
+canvas {
+  background: black;
+}
+
 input {
   padding: 8px 12px;
 

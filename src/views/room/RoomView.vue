@@ -6,7 +6,6 @@
     />
   </div>
   <div v-else class="room">
-    <button @click="roomService.start()">start</button>
     <div class="games">
       <div v-if="currentPlayer" class="game current-game">
         <GameDisplay
@@ -14,6 +13,7 @@
           :room-service="roomService"
           :player="currentPlayer"
         />
+        <button class="start" @click="roomService.start()">start</button>
       </div>
       <div class="other-games">
         <div v-for="p in otherPlayers" :key="p.id" class="game other-game">
@@ -94,21 +94,26 @@ export default defineComponent({
   height: 100%;
 }
 
-.games {
-  display: flex;
-  justify-content: flex-start;
-  align-items: flex-start;
-
-  .game {
-    margin: 12px;
-    padding: 12px;
-
-    background-color: #555;
-  }
-
-  .other-games {
+.room {
+  .games {
     display: flex;
-    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: flex-start;
+
+    .game {
+      margin: 12px;
+
+      &.current-game {
+        button.start {
+          margin: 12px;
+        }
+      }
+    }
+
+    .other-games {
+      display: flex;
+      flex-wrap: wrap;
+    }
   }
 }
 </style>

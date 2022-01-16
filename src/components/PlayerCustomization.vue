@@ -71,7 +71,7 @@ export default defineComponent({
         font-size: 24px;
         text-align: center;
 
-        width: 240px;
+        width: 250px;
       }
 
       margin-bottom: 20px;
