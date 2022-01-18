@@ -47,6 +47,7 @@ interface Piece {
 export interface FallingPiece {
   next_piece: Piece;
   current_piece: Piece;
+  holding_piece: Piece;
   x: number;
   y: number;
   speed: number;
@@ -187,6 +188,9 @@ export default class RoomService extends EventEmitter<ClientEventType> {
           case 'ArrowDown':
             this.socketConn?.send('D');
             break;
+          case 'h':
+            this.socketConn?.send('H');
+            break;
           case ' ':
             this.socketConn?.send('P');
             break;
@@ -269,6 +273,10 @@ export default class RoomService extends EventEmitter<ClientEventType> {
 
           this.games[playerId]?.setNextFallingPieceType(
             e.payload.falling_piece_data.next_piece.name as PieceType,
+          );
+
+          this.games[playerId]?.setHoldingPieceType(
+            e.payload.falling_piece_data.holding_piece?.name || null,
           );
         }
         break;

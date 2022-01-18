@@ -12,6 +12,10 @@
       <div class="nextPiece">
         <canvas ref="nextPieceCanvas" width="80" height="80" />
       </div>
+      <div class="hold">HOLD</div>
+      <div class="holdingPiece">
+        <canvas ref="holdingPieceCanvas" width="80" height="80" />
+      </div>
     </div>
   </div>
 </template>
@@ -46,10 +50,13 @@ export default defineComponent({
   mounted() {
     const mainGameCanvas = this.$refs.gameCanvas as HTMLCanvasElement;
     const nextPieceCanvas = this.$refs.nextPieceCanvas as HTMLCanvasElement;
+    const holdingPieceCanvas = this.$refs
+      .holdingPieceCanvas as HTMLCanvasElement;
 
     const game = new Game(
       mainGameCanvas,
       nextPieceCanvas,
+      holdingPieceCanvas,
       this.isMain ? 24 : 16,
     );
 
@@ -90,7 +97,12 @@ export default defineComponent({
     margin: 24px 0 16px 0;
   }
 
-  .next {
+  .hold {
+    margin: 16px 0;
+  }
+
+  .next,
+  .hold {
     text-align: right;
   }
 

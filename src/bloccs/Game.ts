@@ -27,6 +27,7 @@ export const GAME_EVENT_UPDATE_SCORE = 'update_score';
 
 type GameEventType = typeof GAME_EVENT_UPDATE_SCORE;
 
+// todo: add piece width & height to display them centered
 const pieceData = {
   [PieceI]: [
     0,
@@ -185,9 +186,16 @@ export default class Game extends EventEmitter<GameEventType> {
 
   private readonly nextPieceRenderer: PIXI.AbstractRenderer;
 
+  private readonly holdingPieceDisplay: HTMLCanvasElement;
+
+  private readonly holdingPieceGraphics: PIXI.Graphics;
+
+  private readonly holdingPieceRenderer: PIXI.AbstractRenderer;
+
   constructor(
     view: HTMLCanvasElement,
     nextPieceDisplay: HTMLCanvasElement,
+    holdingPieceDisplay: HTMLCanvasElement,
     blockSize: number,
   ) {
     super();
@@ -204,6 +212,14 @@ export default class Game extends EventEmitter<GameEventType> {
     this.nextPieceGraphics = new PIXI.Graphics();
     this.nextPieceRenderer = PIXI.autoDetectRenderer({
       view: this.nextPieceDisplay,
+      width: 20 + 15 * 4,
+      height: 20 + 15 * 4,
+    });
+
+    this.holdingPieceDisplay = holdingPieceDisplay;
+    this.holdingPieceGraphics = new PIXI.Graphics();
+    this.holdingPieceRenderer = PIXI.autoDetectRenderer({
+      view: this.holdingPieceDisplay,
       width: 20 + 15 * 4,
       height: 20 + 15 * 4,
     });
@@ -264,6 +280,7 @@ export default class Game extends EventEmitter<GameEventType> {
 
     for (let x = 0; x < 4; ++x) {
       for (let y = 0; y < 4; ++y) {
+        // todo: method for rendering blocks/pieces
         const blockData = pieceData[pieceType][y * 4 + x];
 
         if (blockData) {
@@ -276,15 +293,28 @@ export default class Game extends EventEmitter<GameEventType> {
     this.nextPieceRenderer.render(this.nextPieceGraphics);
   }
 
-  public setBlockSize(size: number): void {
-    this.blockSize = size;
+  public setHoldingPieceType(pieceType: PieceType | null): void {
+    this.holdingPieceGraphics.clear();
 
-    this.app.stage.width = this.app.view.width =
-      this.blockSize * this.fieldWidth;
-    this.app.stage.height = this.app.view.height =
-      this.blockSize * this.fieldHeight;
+    if (pieceType !== null) {
+      for (let x = 0; x < 4; ++x) {
+        for (let y = 0; y < 4; ++y) {
+          const blockData = pieceData[pieceType][y * 4 + x];
 
-    this.app.resize();
+          if (blockData) {
+            this.holdingPieceGraphics.beginFill(this.getColor(blockData));
+            this.holdingPieceGraphics.drawRect(
+              x * 15 + 10,
+              y * 15 + 10,
+              15,
+              15,
+            );
+          }
+        }
+      }
+    }
+
+    this.holdingPieceRenderer.render(this.holdingPieceGraphics);
   }
 
   private addColor(code: string, color: number) {
