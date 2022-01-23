@@ -271,8 +271,8 @@ export default class Game extends EventEmitter<GameEventType> {
     });
   }
 
-  public setScore(s: number): void {
-    this.emit(GAME_EVENT_UPDATE_SCORE, s);
+  public setScore(s: number, l: number): void {
+    this.emit(GAME_EVENT_UPDATE_SCORE, s, l);
   }
 
   public setNextFallingPieceType(pieceType: PieceType): void {

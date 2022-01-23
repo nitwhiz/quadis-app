@@ -2,7 +2,8 @@
   <div class="game-display" :class="isMain ? 'main' : undefined">
     <div class="game-wrapper">
       <div class="player">{{ player.name }}</div>
-      <div class="score">{{ score }}</div>
+      <div class="score-line">SCORE {{ score }}</div>
+      <div class="score-line">LINES {{ lines }}</div>
       <div class="canvas">
         <canvas ref="gameCanvas" />
       </div>
@@ -44,6 +45,7 @@ export default defineComponent({
     return {
       game: null as Game | null,
       score: 0,
+      lines: 0,
     };
   },
   computed: {},
@@ -60,7 +62,10 @@ export default defineComponent({
       this.isMain ? 24 : 16,
     );
 
-    game.on(GAME_EVENT_UPDATE_SCORE, (s) => (this.score = s));
+    game.on(GAME_EVENT_UPDATE_SCORE, (s, l) => {
+      this.score = s;
+      this.lines = l;
+    });
 
     this.roomService.registerGame(this.player.id, game);
   },
@@ -89,8 +94,17 @@ export default defineComponent({
   }
 
   .player,
-  .score {
+  .score-line {
     margin-bottom: 12px;
+  }
+
+  &:not(.main) {
+    font-size: 8px;
+
+    .player,
+    .score-line {
+      margin-bottom: 8px;
+    }
   }
 
   .next {

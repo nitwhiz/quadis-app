@@ -37,6 +37,7 @@ export interface Field {
 export interface GameUpdateData {
   field: Field;
   score: number;
+  lines: number;
 }
 
 interface Piece {
@@ -188,11 +189,13 @@ export default class RoomService extends EventEmitter<ClientEventType> {
           case 'ArrowDown':
             this.socketConn?.send('D');
             break;
-          case 'h':
+          case 'Shift':
             this.socketConn?.send('H');
             break;
           case ' ':
             this.socketConn?.send('P');
+            break;
+          default:
             break;
         }
       });
@@ -291,7 +294,7 @@ export default class RoomService extends EventEmitter<ClientEventType> {
             e.payload.field.data,
           );
 
-          this.games[playerId]?.setScore(e.payload.score);
+          this.games[playerId]?.setScore(e.payload.score, e.payload.lines);
         }
         break;
       default:
