@@ -31,6 +31,7 @@
 <script lang="ts">
 import { computed, defineComponent, ref } from 'vue';
 import RoomService, {
+  CLIENT_EVENT_GAME_OVER,
   CLIENT_EVENT_UPDATE_PLAYERS,
   Player,
 } from '../../bloccs/RoomService';
@@ -52,6 +53,8 @@ export default defineComponent({
     const currentPlayer = computed(() => players.value[0] || null);
     const otherPlayers = computed(() => [...players.value].splice(1));
 
+    const gameOverPlayers = ref([] as string[]);
+
     return {
       players,
       currentPlayer,
@@ -59,6 +62,7 @@ export default defineComponent({
       roomId: params.roomId as string,
       playerName,
       isConfirmed,
+      gameOverPlayers,
     };
   },
   data() {
@@ -77,6 +81,10 @@ export default defineComponent({
 
       this.roomService.on(CLIENT_EVENT_UPDATE_PLAYERS, (players: Player[]) => {
         this.players = players;
+      });
+
+      this.roomService.on(CLIENT_EVENT_GAME_OVER, (playerId) => {
+        this.gameOverPlayers.push(playerId);
       });
 
       this.roomService.connect();

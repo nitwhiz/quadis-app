@@ -1,6 +1,6 @@
 import EventEmitter from 'eventemitter3';
 import axios from 'axios';
-import Game, { PieceType } from './Game';
+import Game from './Game';
 
 // todo: refactor
 
@@ -12,7 +12,7 @@ export interface Player {
 
 interface Room {
   id: string;
-  players: Record<string, Player>;
+  players: Player[];
 }
 
 export interface HelloAck {
@@ -20,75 +20,76 @@ export interface HelloAck {
   you: Player;
 }
 
-export interface PlayerJoinData {
-  player: Player;
-}
+export type PlayerJoin = Player;
 
-export interface PlayerLeaveData {
-  player: Player;
-}
+export type PlayerLeave = Player;
 
-export interface Field {
+export interface FieldUpdate {
   data: number[];
   width: number;
   height: number;
 }
 
-export interface GameUpdateData {
-  field: Field;
-  score: number;
-  lines: number;
-}
-
-interface Piece {
-  name: PieceType;
+export interface FallingPieceUpdate {
+  piece_name: number;
   rotation: number;
-}
-
-export interface FallingPiece {
-  next_piece: Piece;
-  current_piece: Piece;
-  holding_piece: Piece;
   x: number;
   y: number;
-  speed: number;
-  fall_timer: number;
 }
 
-export interface FallingPieceUpdateData {
-  falling_piece_data: FallingPiece;
-  piece_display: number[];
+export interface NextPieceUpdate {
+  piece_name: number;
+}
+
+export interface HoldPieceUpdate {
+  piece_name: number;
+}
+
+export interface ScoreUpdate {
+  score: number;
+  lines: number;
 }
 
 export const CHAN_ROOM = 'room';
 
 const SERVER_EVENT_HELLO = 'hello';
 const SERVER_EVENT_HELLO_ACK = 'hello_ack';
-const SERVER_EVENT_ROWS_CLEARED = 'rows_cleared';
-const SERVER_EVENT_GAME_UPDATE = 'game_update';
+
+const SERVER_EVENT_GAME_START = 'game_start';
+const SERVER_EVENT_GAME_OVER = 'game_over';
+
+const SERVER_EVENT_UPDATE_SCORE = 'update_score';
+const SERVER_EVENT_UPDATE_FIELD = 'update_field';
+const SERVER_EVENT_UPDATE_FALLING_PIECE = 'update_falling_piece';
+const SERVER_EVENT_UPDATE_NEXT_PIECE = 'update_next_piece';
+const SERVER_EVENT_UPDATE_HOLD_PIECE = 'update_hold_piece';
+
 const SERVER_EVENT_PLAYER_JOIN = 'player_join';
 const SERVER_EVENT_PLAYER_LEAVE = 'player_leave';
-const SERVER_EVENT_GAME_OVER = 'game_over';
-const SERVER_EVENT_GAME_START = 'game_start';
-const SERVER_EVENT_UPDATE_FALLING_PIECE = 'update_falling_piece';
 
 type ServerEventType =
   | typeof SERVER_EVENT_HELLO
   | typeof SERVER_EVENT_HELLO_ACK
-  | typeof SERVER_EVENT_ROWS_CLEARED
-  | typeof SERVER_EVENT_GAME_UPDATE
-  | typeof SERVER_EVENT_PLAYER_JOIN
-  | typeof SERVER_EVENT_PLAYER_LEAVE
-  | typeof SERVER_EVENT_GAME_OVER
   | typeof SERVER_EVENT_GAME_START
-  | typeof SERVER_EVENT_UPDATE_FALLING_PIECE;
+  | typeof SERVER_EVENT_GAME_OVER
+  | typeof SERVER_EVENT_UPDATE_SCORE
+  | typeof SERVER_EVENT_UPDATE_FIELD
+  | typeof SERVER_EVENT_UPDATE_FALLING_PIECE
+  | typeof SERVER_EVENT_UPDATE_NEXT_PIECE
+  | typeof SERVER_EVENT_UPDATE_HOLD_PIECE
+  | typeof SERVER_EVENT_PLAYER_JOIN
+  | typeof SERVER_EVENT_PLAYER_LEAVE;
 
 export const CLIENT_EVENT_UPDATE_PLAYERS = 'players_update';
+export const CLIENT_EVENT_GAME_OVER = 'game_over';
 
-type ClientEventType = typeof CLIENT_EVENT_UPDATE_PLAYERS;
+type ClientEventType =
+  | typeof CLIENT_EVENT_UPDATE_PLAYERS
+  | typeof CLIENT_EVENT_GAME_OVER;
 
 export interface EventMessage<T> {
   channel: string;
+  original_channel: string;
   type: ServerEventType;
   payload: T;
 }
@@ -102,7 +103,7 @@ export default class RoomService extends EventEmitter<ClientEventType> {
 
   private socketConn: WebSocket | null;
 
-  private players: Record<string, Player>;
+  private readonly players: Record<string, Player>;
 
   private readonly games: Record<string, Game>;
 
@@ -211,7 +212,10 @@ export default class RoomService extends EventEmitter<ClientEventType> {
             const e = msg as EventMessage<HelloAck>;
 
             this.playerId = e.payload.you.id;
-            this.players = e.payload.room.players;
+
+            for (const p of e.payload.room.players) {
+              this.players[p.id] = p;
+            }
 
             this.emit(CLIENT_EVENT_UPDATE_PLAYERS, this.getPlayers());
           }
@@ -232,21 +236,21 @@ export default class RoomService extends EventEmitter<ClientEventType> {
     switch (msg.type) {
       case SERVER_EVENT_PLAYER_JOIN:
         {
-          const e = msg as EventMessage<PlayerJoinData>;
+          const e = msg as EventMessage<PlayerJoin>;
 
-          this.players[e.payload.player.id] = e.payload.player;
+          this.players[e.payload.id] = e.payload;
 
           this.emit(CLIENT_EVENT_UPDATE_PLAYERS, this.getPlayers());
         }
         break;
       case SERVER_EVENT_PLAYER_LEAVE:
         {
-          const e = msg as EventMessage<PlayerLeaveData>;
+          const e = msg as EventMessage<PlayerLeave>;
 
-          delete this.players[e.payload.player.id];
+          delete this.players[e.payload.id];
 
-          this.games[e.payload.player.id]?.destroy();
-          delete this.games[e.payload.player.id];
+          this.games[e.payload.id]?.destroy();
+          delete this.games[e.payload.id];
 
           this.emit(CLIENT_EVENT_UPDATE_PLAYERS, this.getPlayers());
         }
@@ -263,38 +267,64 @@ export default class RoomService extends EventEmitter<ClientEventType> {
     switch (msg.type) {
       case SERVER_EVENT_UPDATE_FALLING_PIECE:
         {
-          const e = msg as EventMessage<FallingPieceUpdateData>;
+          const e = msg as EventMessage<FallingPieceUpdate>;
           const playerId = e.channel.split('/')[1];
 
-          this.games[playerId]?.setFallingPieceData(
-            e.payload.falling_piece_data.current_piece.name as PieceType,
-            e.payload.falling_piece_data.current_piece.rotation,
-            e.payload.falling_piece_data.x,
-            e.payload.falling_piece_data.y,
-            e.payload.piece_display,
-          );
-
-          this.games[playerId]?.setNextFallingPieceType(
-            e.payload.falling_piece_data.next_piece.name as PieceType,
-          );
-
-          this.games[playerId]?.setHoldingPieceType(
-            e.payload.falling_piece_data.holding_piece?.name || null,
+          this.games[playerId]?.setFallingPiece(
+            e.payload.piece_name,
+            e.payload.rotation,
+            e.payload.x,
+            e.payload.y,
           );
         }
         break;
-      case SERVER_EVENT_GAME_UPDATE:
+      case SERVER_EVENT_UPDATE_NEXT_PIECE:
         {
-          const e = msg as EventMessage<GameUpdateData>;
+          const e = msg as EventMessage<NextPieceUpdate>;
           const playerId = e.channel.split('/')[1];
 
-          this.games[playerId]?.setFieldData(
-            e.payload.field.width,
-            e.payload.field.height,
-            e.payload.field.data,
+          this.games[playerId]?.setNextPiece(e.payload.piece_name);
+        }
+        break;
+      case SERVER_EVENT_UPDATE_HOLD_PIECE:
+        {
+          const e = msg as EventMessage<HoldPieceUpdate>;
+          const playerId = e.channel.split('/')[1];
+
+          this.games[playerId]?.setHoldPiece(e.payload.piece_name);
+        }
+        break;
+      case SERVER_EVENT_UPDATE_FIELD:
+        {
+          const e = msg as EventMessage<FieldUpdate>;
+          const playerId = e.channel.split('/')[1];
+
+          this.games[playerId]?.setField(
+            e.payload.width,
+            e.payload.height,
+            e.payload.data,
           );
+        }
+        break;
+      case SERVER_EVENT_UPDATE_SCORE:
+        {
+          const e = msg as EventMessage<ScoreUpdate>;
+          const playerId = e.channel.split('/')[1];
+
+          // todo: do not use game as event bus
 
           this.games[playerId]?.setScore(e.payload.score, e.payload.lines);
+        }
+        break;
+      case SERVER_EVENT_GAME_OVER:
+        {
+          // todo: add type
+          const e = msg as EventMessage<unknown>;
+          const playerId = e.channel.split('/')[1];
+
+          // todo: don't pass string
+          // todo: unused
+          this.emit(CLIENT_EVENT_GAME_OVER, playerId);
         }
         break;
       default:

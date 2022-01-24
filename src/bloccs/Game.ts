@@ -1,24 +1,18 @@
 import * as PIXI from 'pixi.js';
 import EventEmitter from 'eventemitter3';
+import {
+  getPieceDataXY,
+  PieceBedrock,
+  PieceI,
+  PieceJ,
+  PieceL,
+  PieceO,
+  PieceS,
+  PieceT,
+  PieceZ,
+} from './PieceTable';
 
 // todo: refactor
-
-export const PieceI = 'I'.charCodeAt(0);
-export const PieceO = 'O'.charCodeAt(0);
-export const PieceL = 'L'.charCodeAt(0);
-export const PieceJ = 'J'.charCodeAt(0);
-export const PieceS = 'S'.charCodeAt(0);
-export const PieceT = 'T'.charCodeAt(0);
-export const PieceZ = 'Z'.charCodeAt(0);
-
-export type PieceType =
-  | typeof PieceI
-  | typeof PieceO
-  | typeof PieceL
-  | typeof PieceJ
-  | typeof PieceS
-  | typeof PieceT
-  | typeof PieceZ;
 
 const DEFAULT_BLOCKS_WIDTH = 10;
 const DEFAULT_BLOCKS_HEIGHT = 20;
@@ -28,139 +22,11 @@ export const GAME_EVENT_UPDATE_SCORE = 'update_score';
 type GameEventType = typeof GAME_EVENT_UPDATE_SCORE;
 
 // todo: add piece width & height to display them centered
-const pieceData = {
-  [PieceI]: [
-    0,
-    0,
-    0,
-    0,
-    PieceI,
-    PieceI,
-    PieceI,
-    PieceI,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-  ],
-  [PieceO]: [
-    0,
-    0,
-    0,
-    0,
-    0,
-    PieceO,
-    PieceO,
-    0,
-    0,
-    PieceO,
-    PieceO,
-    0,
-    0,
-    0,
-    0,
-    0,
-  ],
-  [PieceL]: [
-    0,
-    0,
-    0,
-    0,
-    0,
-    PieceL,
-    0,
-    0,
-    0,
-    PieceL,
-    0,
-    0,
-    0,
-    PieceL,
-    PieceL,
-    0,
-  ],
-  [PieceJ]: [
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    PieceJ,
-    0,
-    0,
-    0,
-    PieceJ,
-    0,
-    0,
-    PieceJ,
-    PieceJ,
-    0,
-  ],
-  [PieceS]: [
-    0,
-    0,
-    0,
-    0,
-    0,
-    PieceS,
-    PieceS,
-    0,
-    PieceS,
-    PieceS,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-  ],
-  [PieceT]: [
-    0,
-    0,
-    0,
-    0,
-    0,
-    PieceT,
-    0,
-    0,
-    PieceT,
-    PieceT,
-    PieceT,
-    0,
-    0,
-    0,
-    0,
-    0,
-  ],
-  [PieceZ]: [
-    0,
-    0,
-    0,
-    0,
-    PieceZ,
-    PieceZ,
-    0,
-    0,
-    0,
-    PieceZ,
-    PieceZ,
-    0,
-    0,
-    0,
-    0,
-    0,
-  ],
-};
 
 export default class Game extends EventEmitter<GameEventType> {
   public readonly app: PIXI.Application;
 
-  private blockSize: number;
+  private readonly blockSize: number;
 
   private fieldData: Uint8Array;
 
@@ -172,11 +38,9 @@ export default class Game extends EventEmitter<GameEventType> {
 
   private readonly fallingPieceGraphics: PIXI.Graphics;
 
-  private fallingPieceType: PieceType | null;
+  private fallingPieceName: number | null;
 
-  private fallingPieceDisplayRotation: number;
-
-  private readonly fallingPieceDisplayData: Uint8Array;
+  private fallingPieceRotation: number;
 
   private readonly colorMap: Record<number, number>;
 
@@ -235,20 +99,19 @@ export default class Game extends EventEmitter<GameEventType> {
     this.fieldGraphics = new PIXI.Graphics();
     this.fallingPieceGraphics = new PIXI.Graphics();
 
-    this.fallingPieceType = null;
-    this.fallingPieceDisplayRotation = -1;
-    this.fallingPieceDisplayData = new Uint8Array(16);
+    this.fallingPieceName = null;
+    this.fallingPieceRotation = -1;
 
     this.colorMap = {};
 
-    this.addColor('I', 0x0caee8);
-    this.addColor('O', 0xf2f200);
-    this.addColor('L', 0xffce0d);
-    this.addColor('J', 0xebaf0c);
-    this.addColor('S', 0x0cb14a);
-    this.addColor('T', 0xac0ce8);
-    this.addColor('Z', 0xe82c0c);
-    this.addColor('B', 0x333333);
+    this.addColor(PieceI, 0x0caee8);
+    this.addColor(PieceO, 0xf2f200);
+    this.addColor(PieceL, 0xffce0d);
+    this.addColor(PieceJ, 0xebaf0c);
+    this.addColor(PieceS, 0x0cb14a);
+    this.addColor(PieceT, 0xac0ce8);
+    this.addColor(PieceZ, 0xe82c0c);
+    this.addColor(PieceBedrock, 0x333333);
 
     this.fieldGraphics.x = 0;
     this.fieldGraphics.y = 0;
@@ -275,13 +138,13 @@ export default class Game extends EventEmitter<GameEventType> {
     this.emit(GAME_EVENT_UPDATE_SCORE, s, l);
   }
 
-  public setNextFallingPieceType(pieceType: PieceType): void {
+  public setNextPiece(pieceName: number): void {
     this.nextPieceGraphics.clear();
 
     for (let x = 0; x < 4; ++x) {
       for (let y = 0; y < 4; ++y) {
         // todo: method for rendering blocks/pieces
-        const blockData = pieceData[pieceType][y * 4 + x];
+        const blockData = getPieceDataXY(pieceName, 0, x, y);
 
         if (blockData) {
           this.nextPieceGraphics.beginFill(this.getColor(blockData));
@@ -293,13 +156,13 @@ export default class Game extends EventEmitter<GameEventType> {
     this.nextPieceRenderer.render(this.nextPieceGraphics);
   }
 
-  public setHoldingPieceType(pieceType: PieceType | null): void {
+  public setHoldPiece(pieceName: number | null): void {
     this.holdingPieceGraphics.clear();
 
-    if (pieceType !== null) {
+    if (pieceName !== null) {
       for (let x = 0; x < 4; ++x) {
         for (let y = 0; y < 4; ++y) {
-          const blockData = pieceData[pieceType][y * 4 + x];
+          const blockData = getPieceDataXY(pieceName, 0, x, y);
 
           if (blockData) {
             this.holdingPieceGraphics.beginFill(this.getColor(blockData));
@@ -317,8 +180,8 @@ export default class Game extends EventEmitter<GameEventType> {
     this.holdingPieceRenderer.render(this.holdingPieceGraphics);
   }
 
-  private addColor(code: string, color: number) {
-    this.colorMap[code.charCodeAt(0)] = color;
+  private addColor(pieceName: number, color: number) {
+    this.colorMap[pieceName] = color;
   }
 
   private getColor(code: number): number {
@@ -326,11 +189,20 @@ export default class Game extends EventEmitter<GameEventType> {
   }
 
   private updateFallingPieceGraphics(): void {
+    if (this.fallingPieceName === null) {
+      return;
+    }
+
     this.fallingPieceGraphics.clear();
 
     for (let x = 0; x < 4; ++x) {
       for (let y = 0; y < 4; ++y) {
-        const blockData = this.fallingPieceDisplayData[y * 4 + x];
+        const blockData = getPieceDataXY(
+          this.fallingPieceName,
+          this.fallingPieceRotation,
+          x,
+          y,
+        );
 
         if (blockData) {
           this.fallingPieceGraphics.beginFill(this.getColor(blockData));
@@ -345,23 +217,21 @@ export default class Game extends EventEmitter<GameEventType> {
     }
   }
 
-  public setFallingPieceData(
-    pieceType: PieceType,
+  public setFallingPiece(
+    pieceName: number,
     pieceRotation: number,
     x: number,
     y: number,
-    pieceDisplayData: number[],
   ): void {
     this.fallingPieceGraphics.x = x * this.blockSize;
     this.fallingPieceGraphics.y = y * this.blockSize;
 
     if (
-      pieceType !== this.fallingPieceType ||
-      pieceRotation !== this.fallingPieceDisplayRotation
+      pieceName !== this.fallingPieceName ||
+      pieceRotation !== this.fallingPieceRotation
     ) {
-      this.fallingPieceType = pieceType;
-      this.fallingPieceDisplayRotation = pieceRotation;
-      this.fallingPieceDisplayData.set(pieceDisplayData);
+      this.fallingPieceName = pieceName;
+      this.fallingPieceRotation = pieceRotation;
 
       this.updateFallingPieceGraphics();
     }
@@ -404,7 +274,7 @@ export default class Game extends EventEmitter<GameEventType> {
     }
   }
 
-  public setFieldData(width: number, height: number, data: number[]): void {
+  public setField(width: number, height: number, data: number[]): void {
     this.fieldWidth = width;
     this.fieldHeight = height;
 
