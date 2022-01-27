@@ -80,12 +80,16 @@ type ServerEventType =
   | typeof SERVER_EVENT_PLAYER_JOIN
   | typeof SERVER_EVENT_PLAYER_LEAVE;
 
+export const CLIENT_EVENT_SUCCESSFUL_HELLO = 'hello_success';
 export const CLIENT_EVENT_UPDATE_PLAYERS = 'players_update';
 export const CLIENT_EVENT_GAME_OVER = 'game_over';
+export const CLIENT_EVENT_ROOM_HAS_GAMES_RUNNING = 'room_has_games_running';
 
 type ClientEventType =
   | typeof CLIENT_EVENT_UPDATE_PLAYERS
-  | typeof CLIENT_EVENT_GAME_OVER;
+  | typeof CLIENT_EVENT_GAME_OVER
+  | typeof CLIENT_EVENT_ROOM_HAS_GAMES_RUNNING
+  | typeof CLIENT_EVENT_SUCCESSFUL_HELLO;
 
 export interface EventMessage<T> {
   channel: string;
@@ -148,8 +152,13 @@ export default class RoomService extends EventEmitter<ClientEventType> {
       `ws://${import.meta.env.VITE_GAME_SERVER}/rooms/${this.roomId}/socket`,
     );
 
-    this.socketConn.addEventListener('close', () => {
+    this.socketConn.addEventListener('close', (e) => {
       console.log('socket closed');
+
+      if (e.reason === 'room_has_games_running') {
+        this.emit(CLIENT_EVENT_ROOM_HAS_GAMES_RUNNING);
+      }
+
       // todo: remove event listeners on body
     });
 
@@ -166,6 +175,8 @@ export default class RoomService extends EventEmitter<ClientEventType> {
                 name: this.playerName.toUpperCase(),
               }),
             );
+
+            this.emit(CLIENT_EVENT_SUCCESSFUL_HELLO);
 
             this.socketConn?.removeEventListener('message', helloListener);
           }

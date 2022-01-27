@@ -43,7 +43,6 @@ export default defineComponent({
   },
   data() {
     return {
-      game: null as Game | null,
       score: 0,
       lines: 0,
     };
