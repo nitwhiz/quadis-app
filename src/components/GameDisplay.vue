@@ -2,8 +2,8 @@
   <div class="game-display" :class="isMain ? 'main' : undefined">
     <div class="game-wrapper">
       <div class="player">{{ player.name }}</div>
-      <div class="score-line">SCORE {{ score }}</div>
-      <div class="score-line">LINES {{ lines }}</div>
+      <div class="score-line">SCORE {{ score.score }}</div>
+      <div class="score-line">LINES {{ score.lines }}</div>
       <div class="canvas">
         <canvas ref="gameCanvas" />
       </div>
@@ -22,9 +22,10 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from 'vue';
-import Game, { GAME_EVENT_UPDATE_SCORE } from '../bloccs/Game';
-import RoomService, { Player } from '../bloccs/RoomService';
+import { defineComponent, PropType, ref } from 'vue';
+import Player from '../bloccs/player/Player';
+import RoomService from '../bloccs/room/RoomService';
+import Game from '../bloccs/game/Game';
 
 export default defineComponent({
   props: {
@@ -41,35 +42,32 @@ export default defineComponent({
       required: true,
     },
   },
-  data() {
+  setup(props) {
+    const score = ref(props.player.score);
+
     return {
-      score: 0,
-      lines: 0,
+      score,
     };
   },
-  computed: {},
   mounted() {
     const mainGameCanvas = this.$refs.gameCanvas as HTMLCanvasElement;
     const nextPieceCanvas = this.$refs.nextPieceCanvas as HTMLCanvasElement;
     const holdingPieceCanvas = this.$refs
       .holdingPieceCanvas as HTMLCanvasElement;
 
-    const game = new Game(
-      mainGameCanvas,
-      nextPieceCanvas,
-      holdingPieceCanvas,
-      this.isMain ? 24 : 16,
+    this.player.setGame(
+      new Game({
+        view: mainGameCanvas,
+        nextPieceView: nextPieceCanvas,
+        holdingPieceView: holdingPieceCanvas,
+        blockSize: this.isMain ? 24 : 16,
+      }),
     );
 
-    game.on(GAME_EVENT_UPDATE_SCORE, (s, l) => {
-      this.score = s;
-      this.lines = l;
-    });
-
-    this.roomService.registerGame(this.player.id, game);
+    this.roomService.addPlayer(this.player);
   },
   unmounted() {
-    this.roomService.destroyGame(this.player.id);
+    this.roomService.removePlayer(this.player.id);
   },
 });
 </script>
