@@ -41,7 +41,10 @@ export default defineComponent({
   },
   methods: {
     confirm() {
-      this.isConfirmed = true;
+      if (this.type === 'create') {
+        this.isConfirmed = true;
+      }
+
       this.$emit('confirm');
     },
   },

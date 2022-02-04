@@ -1,27 +1,32 @@
 <template>
-  <div v-if="!isConfirmed" class="player">
-    <PlayerCustomization
-      type="join"
-      @confirm="handlePlayerCustomizationConfirmation"
-    />
-  </div>
-  <div v-else class="room">
-    <div class="games">
-      <div v-if="currentPlayer" class="game current-game">
-        <GameDisplay
-          :is-main="true"
-          :room-service="roomService"
-          :player="currentPlayer"
-        />
-        <button class="start" @click="roomService.start()">start</button>
-      </div>
-      <div class="other-games">
-        <div v-for="p in otherPlayers" :key="p.id" class="game other-game">
+  <div class="wrapper">
+    <div v-if="error" class="error">
+      {{ errorMessage }}
+    </div>
+    <div v-if="!isConfirmed" class="player">
+      <PlayerCustomization
+        type="join"
+        @confirm="handlePlayerCustomizationConfirmation"
+      />
+    </div>
+    <div class="room">
+      <div class="games">
+        <div v-if="currentPlayer" class="game current-game">
           <GameDisplay
-            :is-main="false"
+            :is-main="true"
             :room-service="roomService"
-            :player="p"
+            :player="currentPlayer"
           />
+          <button class="start" @click="roomService.start()">start</button>
+        </div>
+        <div class="other-games">
+          <div v-for="p in otherPlayers" :key="p.id" class="game other-game">
+            <GameDisplay
+              :is-main="false"
+              :room-service="roomService"
+              :player="p"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -31,6 +36,9 @@
 <script lang="ts">
 import { computed, defineComponent, ref } from 'vue';
 import RoomService, {
+  CLIENT_EVENT_GAME_OVER,
+  CLIENT_EVENT_ROOM_HAS_GAMES_RUNNING,
+  CLIENT_EVENT_SUCCESSFUL_HELLO,
   CLIENT_EVENT_UPDATE_PLAYERS,
   Player,
 } from '../../bloccs/RoomService';
@@ -52,6 +60,8 @@ export default defineComponent({
     const currentPlayer = computed(() => players.value[0] || null);
     const otherPlayers = computed(() => [...players.value].splice(1));
 
+    const gameOverPlayers = ref([] as string[]);
+
     return {
       players,
       currentPlayer,
@@ -59,12 +69,24 @@ export default defineComponent({
       roomId: params.roomId as string,
       playerName,
       isConfirmed,
+      gameOverPlayers,
     };
   },
   data() {
     return {
       roomService: null as RoomService | null,
+      error: null as 'room_has_running_games' | null,
     };
+  },
+  computed: {
+    errorMessage() {
+      switch (this.error) {
+        case 'room_has_running_games':
+          return 'The game is already started';
+        default:
+          return '';
+      }
+    },
   },
   mounted() {
     if (this.isConfirmed) {
@@ -75,8 +97,20 @@ export default defineComponent({
     handlePlayerCustomizationConfirmation() {
       this.roomService = new RoomService(this.playerName, this.roomId);
 
+      this.roomService.on(CLIENT_EVENT_SUCCESSFUL_HELLO, () => {
+        this.isConfirmed = true;
+      });
+
       this.roomService.on(CLIENT_EVENT_UPDATE_PLAYERS, (players: Player[]) => {
         this.players = players;
+      });
+
+      this.roomService.on(CLIENT_EVENT_GAME_OVER, (playerId) => {
+        this.gameOverPlayers.push(playerId);
+      });
+
+      this.roomService.on(CLIENT_EVENT_ROOM_HAS_GAMES_RUNNING, () => {
+        this.error = 'room_has_running_games';
       });
 
       this.roomService.connect();
@@ -86,12 +120,21 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-.player {
+.wrapper {
   display: flex;
+  flex-direction: column;
+
   justify-content: center;
   align-items: center;
+
   width: 100%;
   height: 100%;
+
+  .error {
+    margin-bottom: 32px;
+
+    color: #990000;
+  }
 }
 
 .room {
