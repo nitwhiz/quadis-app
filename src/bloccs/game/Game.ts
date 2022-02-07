@@ -1,5 +1,4 @@
 import * as PIXI from 'pixi.js';
-import EventEmitter from 'eventemitter3';
 import {
   getPieceDataXY,
   PieceBedrock,
@@ -10,20 +9,19 @@ import {
   PieceS,
   PieceT,
   PieceZ,
-} from './PieceTable';
+} from '../piece/PieceTable';
+import GameSettings from './GameSettings';
+import ColorMap from '../piece/color/ColorMap';
+import SidePieceGraphics from '../graphics/SidePieceGraphics';
 
 // todo: refactor
 
 const DEFAULT_BLOCKS_WIDTH = 10;
 const DEFAULT_BLOCKS_HEIGHT = 20;
 
-export const GAME_EVENT_UPDATE_SCORE = 'update_score';
-
-type GameEventType = typeof GAME_EVENT_UPDATE_SCORE;
-
 // todo: add piece width & height to display them centered
 
-export default class Game extends EventEmitter<GameEventType> {
+export default class Game {
   public readonly app: PIXI.Application;
 
   private readonly blockSize: number;
@@ -42,55 +40,44 @@ export default class Game extends EventEmitter<GameEventType> {
 
   private fallingPieceRotation: number;
 
-  private readonly colorMap: Record<number, number>;
+  private readonly colorMap: ColorMap;
 
-  private readonly nextPieceDisplay: HTMLCanvasElement;
+  private readonly nextPieceGraphics: SidePieceGraphics;
 
-  private readonly nextPieceGraphics: PIXI.Graphics;
+  private readonly holdingPieceGraphics: SidePieceGraphics;
 
-  private readonly nextPieceRenderer: PIXI.AbstractRenderer;
-
-  private readonly holdingPieceDisplay: HTMLCanvasElement;
-
-  private readonly holdingPieceGraphics: PIXI.Graphics;
-
-  private readonly holdingPieceRenderer: PIXI.AbstractRenderer;
-
-  constructor(
-    view: HTMLCanvasElement,
-    nextPieceDisplay: HTMLCanvasElement,
-    holdingPieceDisplay: HTMLCanvasElement,
-    blockSize: number,
-  ) {
-    super();
-
+  constructor(settings: GameSettings) {
     this.app = new PIXI.Application({
-      view,
-      width: DEFAULT_BLOCKS_WIDTH * blockSize,
-      height: DEFAULT_BLOCKS_HEIGHT * blockSize,
+      view: settings.view,
+      width: DEFAULT_BLOCKS_WIDTH * settings.blockSize,
+      height: DEFAULT_BLOCKS_HEIGHT * settings.blockSize,
       backgroundColor: 0x000000,
       autoStart: false,
     });
 
-    this.nextPieceDisplay = nextPieceDisplay;
-    this.nextPieceGraphics = new PIXI.Graphics();
-    this.nextPieceRenderer = PIXI.autoDetectRenderer({
-      view: this.nextPieceDisplay,
-      width: 20 + 15 * 4,
-      height: 20 + 15 * 4,
-    });
+    this.colorMap = new ColorMap();
 
-    this.holdingPieceDisplay = holdingPieceDisplay;
-    this.holdingPieceGraphics = new PIXI.Graphics();
-    this.holdingPieceRenderer = PIXI.autoDetectRenderer({
-      view: this.holdingPieceDisplay,
-      width: 20 + 15 * 4,
-      height: 20 + 15 * 4,
-    });
+    this.colorMap.add(PieceI, 0x0caee8);
+    this.colorMap.add(PieceO, 0xf2f200);
+    this.colorMap.add(PieceL, 0xffce0d);
+    this.colorMap.add(PieceJ, 0xebaf0c);
+    this.colorMap.add(PieceS, 0x0cb14a);
+    this.colorMap.add(PieceT, 0xac0ce8);
+    this.colorMap.add(PieceZ, 0xe82c0c);
+    this.colorMap.add(PieceBedrock, 0x333333);
+
+    this.nextPieceGraphics = new SidePieceGraphics(
+      settings.nextPieceView,
+      this.colorMap,
+    );
+    this.holdingPieceGraphics = new SidePieceGraphics(
+      settings.holdingPieceView,
+      this.colorMap,
+    );
 
     console.debug('new pixi instance');
 
-    this.blockSize = blockSize;
+    this.blockSize = settings.blockSize;
 
     this.fieldData = new Uint8Array(0);
     this.fieldWidth = DEFAULT_BLOCKS_WIDTH;
@@ -101,17 +88,6 @@ export default class Game extends EventEmitter<GameEventType> {
 
     this.fallingPieceName = null;
     this.fallingPieceRotation = -1;
-
-    this.colorMap = {};
-
-    this.addColor(PieceI, 0x0caee8);
-    this.addColor(PieceO, 0xf2f200);
-    this.addColor(PieceL, 0xffce0d);
-    this.addColor(PieceJ, 0xebaf0c);
-    this.addColor(PieceS, 0x0cb14a);
-    this.addColor(PieceT, 0xac0ce8);
-    this.addColor(PieceZ, 0xe82c0c);
-    this.addColor(PieceBedrock, 0x333333);
 
     this.fieldGraphics.x = 0;
     this.fieldGraphics.y = 0;
@@ -134,58 +110,12 @@ export default class Game extends EventEmitter<GameEventType> {
     });
   }
 
-  public setScore(s: number, l: number): void {
-    this.emit(GAME_EVENT_UPDATE_SCORE, s, l);
-  }
-
   public setNextPiece(pieceName: number): void {
-    this.nextPieceGraphics.clear();
-
-    for (let x = 0; x < 4; ++x) {
-      for (let y = 0; y < 4; ++y) {
-        // todo: method for rendering blocks/pieces
-        const blockData = getPieceDataXY(pieceName, 0, x, y);
-
-        if (blockData) {
-          this.nextPieceGraphics.beginFill(this.getColor(blockData));
-          this.nextPieceGraphics.drawRect(x * 15 + 10, y * 15 + 10, 15, 15);
-        }
-      }
-    }
-
-    this.nextPieceRenderer.render(this.nextPieceGraphics);
+    this.nextPieceGraphics.setPiece(pieceName, 0);
   }
 
   public setHoldPiece(pieceName: number | null): void {
-    this.holdingPieceGraphics.clear();
-
-    if (pieceName !== null) {
-      for (let x = 0; x < 4; ++x) {
-        for (let y = 0; y < 4; ++y) {
-          const blockData = getPieceDataXY(pieceName, 0, x, y);
-
-          if (blockData) {
-            this.holdingPieceGraphics.beginFill(this.getColor(blockData));
-            this.holdingPieceGraphics.drawRect(
-              x * 15 + 10,
-              y * 15 + 10,
-              15,
-              15,
-            );
-          }
-        }
-      }
-    }
-
-    this.holdingPieceRenderer.render(this.holdingPieceGraphics);
-  }
-
-  private addColor(pieceName: number, color: number) {
-    this.colorMap[pieceName] = color;
-  }
-
-  private getColor(code: number): number {
-    return this.colorMap[code] === undefined ? 0xff00ff : this.colorMap[code];
+    this.holdingPieceGraphics.setPiece(pieceName, 0);
   }
 
   private updateFallingPieceGraphics(): void {
@@ -205,7 +135,9 @@ export default class Game extends EventEmitter<GameEventType> {
         );
 
         if (blockData) {
-          this.fallingPieceGraphics.beginFill(this.getColor(blockData));
+          this.fallingPieceGraphics.beginFill(
+            this.colorMap.getColor(blockData),
+          );
           this.fallingPieceGraphics.drawRect(
             x * this.blockSize,
             y * this.blockSize,
@@ -248,7 +180,7 @@ export default class Game extends EventEmitter<GameEventType> {
         const blockData = this.fieldData[y * this.fieldWidth + x];
 
         if (blockData) {
-          this.fieldGraphics.beginFill(this.getColor(blockData));
+          this.fieldGraphics.beginFill(this.colorMap.getColor(blockData));
           this.fieldGraphics.drawRect(
             x * this.blockSize,
             y * this.blockSize,
