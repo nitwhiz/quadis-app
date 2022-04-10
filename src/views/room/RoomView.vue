@@ -12,20 +12,14 @@
     <div class="room">
       <div class="games">
         <div v-if="mainPlayer" :key="mainPlayer.id" class="game current-game">
-          <GameDisplay
-            :is-main="true"
-            :room-service="roomService"
-            :player="mainPlayer"
-          />
-          <button class="start" @click="roomService.start()">start</button>
+          <GameDisplay :is-main="true" :player-id="mainPlayer.id" />
+          <button class="start" @click="() => roomService?.start()">
+            start
+          </button>
         </div>
         <div class="other-games">
           <div v-for="p in otherPlayers" :key="p.id" class="game other-game">
-            <GameDisplay
-              :is-main="false"
-              :room-service="roomService"
-              :player="p"
-            />
+            <GameDisplay :is-main="false" :player-id="p.id" />
           </div>
         </div>
       </div>
@@ -40,13 +34,13 @@ import usePlayerCustomization from '../../composables/usePlayerCustomization';
 import { useRoute } from 'vue-router';
 import PlayerCustomization from '../../components/PlayerCustomization.vue';
 import GameDisplay from '../../components/GameDisplay.vue';
-import RoomService from '../../bloccs/room/RoomService';
 import {
   EVENT_ROOM_HAS_GAMES_RUNNING,
   EVENT_SUCCESSFUL_HELLO,
   EVENT_UPDATE_PLAYERS,
 } from '../../bloccs/event/EventType';
 import Player from '../../bloccs/player/Player';
+import useRoomService from '../../composables/useRoomService';
 
 export default defineComponent({
   components: {
@@ -56,16 +50,18 @@ export default defineComponent({
   setup() {
     const { params } = useRoute();
     const { playerName, isConfirmed } = usePlayerCustomization();
+    const { createRoomService, roomService } = useRoomService();
 
     return {
       roomId: params.roomId as string,
       playerName,
       isConfirmed,
+      createRoomService,
+      roomService,
     };
   },
   data() {
     return {
-      roomService: null as RoomService | null,
       error: null as 'room_has_running_games' | null,
       mainPlayer: null as Player | null,
       otherPlayers: [] as Player[],
@@ -88,24 +84,22 @@ export default defineComponent({
   },
   methods: {
     handlePlayerCustomizationConfirmation() {
-      this.roomService = new RoomService(this.roomId);
+      const roomService = this.createRoomService(this.roomId);
 
-      this.roomService.on(EVENT_SUCCESSFUL_HELLO, () => {
+      roomService.on(EVENT_SUCCESSFUL_HELLO, () => {
         this.isConfirmed = true;
       });
 
-      this.roomService.on(EVENT_UPDATE_PLAYERS, () => {
-        if (this.roomService) {
-          this.mainPlayer = this.roomService?.getMainPlayer();
-          this.otherPlayers = this.roomService?.getOtherPlayers();
-        }
+      roomService.on(EVENT_UPDATE_PLAYERS, () => {
+        this.mainPlayer = roomService.getMainPlayer();
+        this.otherPlayers = roomService.getOtherPlayers();
       });
 
-      this.roomService.on(EVENT_ROOM_HAS_GAMES_RUNNING, () => {
+      roomService.on(EVENT_ROOM_HAS_GAMES_RUNNING, () => {
         this.error = 'room_has_running_games';
       });
 
-      this.roomService.connect(this.playerName);
+      roomService.connect(this.playerName);
     },
   },
 });

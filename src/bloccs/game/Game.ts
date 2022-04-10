@@ -96,6 +96,12 @@ export default class Game {
     this.fallingPieceGraphics.y = 0;
 
     this.app.stage.addChild(this.fieldGraphics, this.fallingPieceGraphics);
+
+    PIXI.Texture.fromURL(
+      new URL('/texture/block_base.png', import.meta.url).toString(),
+    ).then(() => {
+      console.log('texture loaded');
+    });
   }
 
   public destroy(): void {

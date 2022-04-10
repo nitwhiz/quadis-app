@@ -1,9 +1,9 @@
 <template>
   <div class="game-display" :class="isMain ? 'main' : undefined">
     <div class="game-wrapper">
-      <div class="player">{{ player.name }}</div>
-      <div class="score-line">SCORE {{ score.score }}</div>
-      <div class="score-line">LINES {{ score.lines }}</div>
+      <div class="player">{{ player?.name || 'null' }}</div>
+      <div class="score-line">SCORE {{ score }}</div>
+      <div class="score-line">LINES {{ lines }}</div>
       <div class="canvas">
         <canvas ref="gameCanvas" />
       </div>
@@ -22,10 +22,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, ref } from 'vue';
-import Player from '../bloccs/player/Player';
-import RoomService from '../bloccs/room/RoomService';
+import { computed, defineComponent } from 'vue';
 import Game from '../bloccs/game/Game';
+import useRoomService from '../composables/useRoomService';
 
 export default defineComponent({
   props: {
@@ -33,23 +32,37 @@ export default defineComponent({
       type: Boolean,
       required: true,
     },
-    player: {
-      type: Object as PropType<Player>,
-      required: true,
-    },
-    roomService: {
-      type: RoomService,
+    playerId: {
+      type: String,
       required: true,
     },
   },
   setup(props) {
-    const score = ref(props.player.score);
+    const { roomService } = useRoomService();
+
+    const player = computed(
+      () => roomService.value?.getPlayerById(props.playerId) || null,
+    );
+
+    if (player.value === null) {
+      throw 'player is null';
+    }
+
+    const score = computed(() => player.value?.score.score || 0);
+    const lines = computed(() => player.value?.score.lines || 0);
 
     return {
+      roomService,
+      player,
       score,
+      lines,
     };
   },
   mounted() {
+    if (this.player === null) {
+      throw 'player is null';
+    }
+
     const mainGameCanvas = this.$refs.gameCanvas as HTMLCanvasElement;
     const nextPieceCanvas = this.$refs.nextPieceCanvas as HTMLCanvasElement;
     const holdingPieceCanvas = this.$refs
@@ -64,10 +77,10 @@ export default defineComponent({
       }),
     );
 
-    this.roomService.addPlayer(this.player);
+    this.roomService?.addPlayer(this.player);
   },
   unmounted() {
-    this.roomService.removePlayer(this.player.id);
+    this.roomService?.removePlayer(this.player?.id || null);
   },
 });
 </script>

@@ -1,15 +1,15 @@
 export default class ColorMap {
-  private readonly colors: Record<number, number>;
+  private readonly colorDict: Record<number, number>;
 
   constructor() {
-    this.colors = {};
+    this.colorDict = {};
   }
 
   public add(pieceName: number, color: number) {
-    this.colors[pieceName] = color;
+    this.colorDict[pieceName] = color;
   }
 
   public getColor(code: number): number {
-    return this.colors[code] === undefined ? 0xff00ff : this.colors[code];
+    return this.colorDict[code] === undefined ? 0xff00ff : this.colorDict[code];
   }
 }

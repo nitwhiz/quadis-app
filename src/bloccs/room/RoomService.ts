@@ -18,15 +18,7 @@ import {
   PlayerLeavePayload,
   ServerEvent,
 } from '../event/EventPayload';
-import {
-  CMD_DOWN,
-  CMD_HARD_LOCK,
-  CMD_HOLD,
-  CMD_LEFT,
-  CMD_RIGHT,
-  CMD_ROTATE,
-  Command,
-} from '../command/Command';
+import { Command } from '../command/Command';
 import InputHandler, { EVENT_INPUT_COMMAND } from '../input/InputHandler';
 import KeyboardInputAdapter from '../input/adapter/KeyboardInputAdapter';
 import GamepadInputAdapter from '../input/adapter/GamepadInputAdapter';
@@ -68,6 +60,10 @@ export default class RoomService extends EventEmitter<ClientEventType> {
       .sort((pA, pB) => pA.createAt - pB.createAt);
   }
 
+  public getPlayerById(playerId: string): Player | null {
+    return this.players[playerId] || null;
+  }
+
   public addPlayer(player: Player): void {
     const mainPlayer = this.getMainPlayer();
 
@@ -81,7 +77,11 @@ export default class RoomService extends EventEmitter<ClientEventType> {
     this.emit(EVENT_UPDATE_PLAYERS);
   }
 
-  public removePlayer(playerId: string) {
+  public removePlayer(playerId: string | null) {
+    if (!playerId) {
+      return;
+    }
+
     this.players[playerId]?.destroy();
     delete this.players[playerId];
 
