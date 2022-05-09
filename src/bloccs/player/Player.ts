@@ -11,6 +11,8 @@ import {
 import Game from '../game/Game';
 import Score from '../score/Score';
 import {
+  PLAYER_UPDATE_SCORE,
+  PlayerEventType,
   SERVER_EVENT_GAME_OVER,
   SERVER_EVENT_UPDATE_FALLING_PIECE,
   SERVER_EVENT_UPDATE_FIELD,
@@ -18,8 +20,9 @@ import {
   SERVER_EVENT_UPDATE_NEXT_PIECE,
   SERVER_EVENT_UPDATE_SCORE,
 } from '../event/EventType';
+import EventEmitter from 'eventemitter3';
 
-export default class Player {
+export default class Player extends EventEmitter<PlayerEventType> {
   public readonly isMain: boolean;
 
   public readonly id: string;
@@ -33,6 +36,8 @@ export default class Player {
   public readonly score: Score;
 
   constructor(isMain: boolean, p: PlayerPayload) {
+    super();
+
     this.isMain = isMain;
 
     this.id = p.id;
@@ -121,11 +126,8 @@ export default class Player {
           this.score.score = e.payload.score;
           this.score.lines = e.payload.lines;
 
-          console.log(this.score);
+          this.emit(PLAYER_UPDATE_SCORE, this.score);
         }
-        break;
-      case SERVER_EVENT_GAME_OVER:
-        // todo: handle game over
         break;
       default:
         break;

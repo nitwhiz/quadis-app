@@ -46,9 +46,12 @@ export interface ScoreUpdatePayload {
   lines: number;
 }
 
+export interface PlayerGameOverPayload {
+  player: PlayerPayload;
+}
+
 export interface ServerEvent<T> {
   channel: string;
-  original_channel: string;
   type: ServerEventType;
   payload: T;
 }

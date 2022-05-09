@@ -2,9 +2,11 @@ import EventEmitter from 'eventemitter3';
 import axios from 'axios';
 import {
   ClientEventType,
+  EVENT_GAME_OVER,
   EVENT_ROOM_HAS_GAMES_RUNNING,
   EVENT_SUCCESSFUL_HELLO,
   EVENT_UPDATE_PLAYERS,
+  SERVER_EVENT_GAME_OVER,
   SERVER_EVENT_GAME_START,
   SERVER_EVENT_HELLO,
   SERVER_EVENT_HELLO_ACK,
@@ -14,6 +16,7 @@ import {
 import Player from '../player/Player';
 import {
   HelloAckPayload,
+  PlayerGameOverPayload,
   PlayerJoinPayload,
   PlayerLeavePayload,
   ServerEvent,
@@ -194,11 +197,20 @@ export default class RoomService extends EventEmitter<ClientEventType> {
         {
           const e = msg as ServerEvent<PlayerLeavePayload>;
 
+          // todo: leaving mid-update spawns pixi errors
+
           this.removePlayer(e.payload.id);
         }
         break;
       case SERVER_EVENT_GAME_START:
         Object.values(this.players).forEach((p) => p.startGame());
+        break;
+      case SERVER_EVENT_GAME_OVER:
+        {
+          const e = msg as ServerEvent<PlayerGameOverPayload>;
+
+          this.emit(EVENT_GAME_OVER, e.payload);
+        }
         break;
       default:
         break;

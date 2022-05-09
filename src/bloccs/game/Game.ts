@@ -46,6 +46,8 @@ export default class Game {
 
   private readonly holdingPieceGraphics: SidePieceGraphics;
 
+  private blockTexture: PIXI.Texture | null;
+
   constructor(settings: GameSettings) {
     this.app = new PIXI.Application({
       view: settings.view,
@@ -97,10 +99,12 @@ export default class Game {
 
     this.app.stage.addChild(this.fieldGraphics, this.fallingPieceGraphics);
 
+    this.blockTexture = null;
+
     PIXI.Texture.fromURL(
       new URL('/texture/block_base.png', import.meta.url).toString(),
-    ).then(() => {
-      console.log('texture loaded');
+    ).then((texture) => {
+      this.blockTexture = texture;
     });
   }
 
@@ -124,12 +128,14 @@ export default class Game {
     this.holdingPieceGraphics.setPiece(pieceName, 0);
   }
 
+  // todo: prerender pieces into sprites
   private updateFallingPieceGraphics(): void {
     if (this.fallingPieceName === null) {
       return;
     }
 
     this.fallingPieceGraphics.clear();
+    this.fallingPieceGraphics.removeChildren();
 
     for (let x = 0; x < 4; ++x) {
       for (let y = 0; y < 4; ++y) {
@@ -141,15 +147,27 @@ export default class Game {
         );
 
         if (blockData) {
-          this.fallingPieceGraphics.beginFill(
-            this.colorMap.getColor(blockData),
-          );
-          this.fallingPieceGraphics.drawRect(
-            x * this.blockSize,
-            y * this.blockSize,
-            this.blockSize,
-            this.blockSize,
-          );
+          if (this.blockTexture) {
+            const s = new PIXI.Sprite(this.blockTexture);
+
+            s.x = x * this.blockSize;
+            s.y = y * this.blockSize;
+
+            s.scale.set(this.blockSize / this.blockTexture.width);
+            s.tint = this.colorMap.getColor(blockData);
+
+            this.fallingPieceGraphics.addChild(s);
+          } else {
+            this.fallingPieceGraphics.beginFill(
+              this.colorMap.getColor(blockData),
+            );
+            this.fallingPieceGraphics.drawRect(
+              x * this.blockSize,
+              y * this.blockSize,
+              this.blockSize,
+              this.blockSize,
+            );
+          }
         }
       }
     }
@@ -175,8 +193,10 @@ export default class Game {
     }
   }
 
+  // todo: render everything into a single sprite
   private updateFieldGraphics(): void {
     this.fieldGraphics.clear();
+    this.fieldGraphics.removeChildren();
 
     this.fieldGraphics.width = this.fieldWidth * this.blockSize;
     this.fieldGraphics.height = this.fieldHeight * this.blockSize;
@@ -186,13 +206,25 @@ export default class Game {
         const blockData = this.fieldData[y * this.fieldWidth + x];
 
         if (blockData) {
-          this.fieldGraphics.beginFill(this.colorMap.getColor(blockData));
-          this.fieldGraphics.drawRect(
-            x * this.blockSize,
-            y * this.blockSize,
-            this.blockSize,
-            this.blockSize,
-          );
+          if (this.blockTexture) {
+            const s = new PIXI.Sprite(this.blockTexture);
+
+            s.x = x * this.blockSize;
+            s.y = y * this.blockSize;
+
+            s.scale.set(this.blockSize / this.blockTexture.width);
+            s.tint = this.colorMap.getColor(blockData);
+
+            this.fieldGraphics.addChild(s);
+          } else {
+            this.fieldGraphics.beginFill(this.colorMap.getColor(blockData));
+            this.fieldGraphics.drawRect(
+              x * this.blockSize,
+              y * this.blockSize,
+              this.blockSize,
+              this.blockSize,
+            );
+          }
         }
       }
     }

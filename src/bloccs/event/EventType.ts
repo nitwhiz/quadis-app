@@ -38,3 +38,7 @@ export type ClientEventType =
   | typeof EVENT_ROOM_HAS_GAMES_RUNNING
   | typeof EVENT_SUCCESSFUL_HELLO
   | typeof EVENT_UPDATE_SCORE;
+
+export const PLAYER_UPDATE_SCORE = 'update_score';
+
+export type PlayerEventType = typeof PLAYER_UPDATE_SCORE;
