@@ -1,30 +1,33 @@
 {
-  "name": "bloccs-app",
-  "version": "0.0.0",
+  "name": "@bloccs/app",
+  "version": "1.0.0",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@bloccs/client": "file:/home/andy/dev/bloccs-client/bloccs-client-1.0.0.tgz",
     "eventemitter3": "^4.0.7",
-    "pixi.js": "^6.3.0",
-    "vue": "^3.2.33",
-    "vue-router": "^4.0.14"
+    "fontfaceobserver": "^2.3.0",
+    "pixi.js": "^6.4.2",
+    "vue": "^3.2.37",
+    "vue-router": "^4.0.15"
   },
   "devDependencies": {
-    "@types/offscreencanvas": "^2019.6.4",
-    "@vitejs/plugin-vue": "^2.3.1",
+    "@types/fontfaceobserver": "^2.1.0",
+    "@types/offscreencanvas": "^2019.7.0",
+    "@vitejs/plugin-vue": "^2.3.3",
     "@vue/eslint-config-typescript": "^10.0.0",
-    "axios": "^0.24.0",
-    "eslint": "^8.14.0",
+    "axios": "^0.27.2",
+    "eslint": "^8.17.0",
     "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-vue": "^8.7.1",
+    "eslint-plugin-vue": "^9.1.0",
     "prettier": "^2.6.2",
-    "sass": "^1.51.0",
-    "typescript": "^4.6.4",
-    "vite": "^2.9.6",
-    "vite-plugin-eslint": "^1.6.0",
-    "vue-tsc": "^0.29.8"
+    "sass": "^1.52.2",
+    "typescript": "^4.7.3",
+    "vite": "^2.9.9",
+    "vite-plugin-eslint": "^1.6.1",
+    "vue-tsc": "^0.37.0"
   }
 }

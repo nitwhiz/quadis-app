@@ -7,7 +7,12 @@ export default createRouter({
     {
       path: '/',
       name: 'home',
-      component: () => import('./views/HomeView.vue'),
+      redirect: {
+        name: 'room',
+        params: {
+          roomId: 'new',
+        },
+      },
     },
     {
       path: '/rooms/:roomId',
@@ -16,14 +21,21 @@ export default createRouter({
       beforeEnter: (to, from, next) => {
         const roomId = to.params.roomId;
 
-        axios
-          .get(`http://${import.meta.env.VITE_GAME_SERVER}/rooms/${roomId}`)
-          .then(() => next())
-          .catch(() =>
-            next({
-              name: 'home',
-            }),
-          );
+        if (roomId !== 'new') {
+          axios
+            .get(`http://${import.meta.env.VITE_GAME_SERVER}/rooms/${roomId}`)
+            .then(() => next())
+            .catch(() =>
+              next({
+                name: 'room',
+                params: {
+                  roomId: 'new',
+                },
+              }),
+            );
+        } else {
+          next();
+        }
       },
     },
   ] as RouteRecordRaw[],

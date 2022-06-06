@@ -1,34 +1,22 @@
 <template>
-  <PlayerCustomization
-    type="create"
-    @confirm="handlePlayerCustomizationConfirmation"
-  />
+  <PlayerName :is-join="false" @confirm="createRoom" />
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
-import axios from 'axios';
-import PlayerCustomization from '../components/PlayerCustomization.vue';
+import { defineComponent, watch } from 'vue';
+import PlayerName from '../components/PlayerName.vue';
+import usePlayerName from '../composables/usePlayerName';
+import { useRouter } from 'vue-router';
 
 export default defineComponent({
   components: {
-    PlayerCustomization,
+    PlayerName,
   },
-  methods: {
-    handlePlayerCustomizationConfirmation() {
-      axios
-        .post(`http://${import.meta.env.VITE_GAME_SERVER}/rooms`)
-        .then((response) => {
-          this.$router.push({
-            name: 'room',
-            params: {
-              roomId: response.data.roomId,
-            },
-          });
-        });
-    },
+  setup() {
+    const { confirm } = usePlayerName();
+    const { push } = useRouter();
   },
 });
 </script>
 
-<style scoped></style>
+<style scoped lang="scss"></style>
