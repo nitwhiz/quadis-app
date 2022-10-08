@@ -1,32 +1,24 @@
-import * as PIXI from 'pixi.js';
 import { getPieceDataXY } from '../piece/PieceTable';
 import ColorMap from '../piece/color/ColorMap';
+import { Graphics } from 'pixi.js';
 
-export default class SidePieceGraphics {
-  private readonly graphics: PIXI.Graphics;
-
+export default class SidePieceGraphics extends Graphics {
   private readonly colorMap: ColorMap;
-
-  private readonly renderer: PIXI.AbstractRenderer;
 
   private currentPieceName: null | number;
 
   private currentPieceRotation: number;
 
-  constructor(view: HTMLCanvasElement, colorMap: ColorMap) {
-    this.graphics = new PIXI.Graphics();
+  constructor(colorMap: ColorMap) {
+    super();
+
     this.colorMap = colorMap;
-    this.renderer = PIXI.autoDetectRenderer({
-      view,
-      width: 20 + 15 * 4,
-      height: 20 + 15 * 4,
-    });
 
     this.currentPieceName = null;
     this.currentPieceRotation = -1;
   }
 
-  public setPiece(pieceName: null | number, pieceRotation: number): void {
+  public setPiece(pieceName: null | number, pieceRotation = 0): void {
     if (
       pieceName !== this.currentPieceName ||
       pieceRotation !== this.currentPieceRotation
@@ -43,7 +35,7 @@ export default class SidePieceGraphics {
       return;
     }
 
-    this.graphics.clear();
+    this.clear();
 
     for (let x = 0; x < 4; ++x) {
       for (let y = 0; y < 4; ++y) {
@@ -55,12 +47,10 @@ export default class SidePieceGraphics {
         );
 
         if (blockData) {
-          this.graphics.beginFill(this.colorMap.getColor(blockData));
-          this.graphics.drawRect(x * 15 + 10, y * 15 + 10, 15, 15);
+          this.beginFill(this.colorMap.getColor(blockData));
+          this.drawRect(x * 15 + 10, y * 15 + 10, 15, 15);
         }
       }
     }
-
-    this.renderer.render(this.graphics);
   }
 }

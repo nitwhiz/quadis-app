@@ -6,8 +6,19 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
+import GameHost from './bloccs/game/GameHost';
 
-export default defineComponent({});
+export default defineComponent({
+  setup() {
+    const gameHost = GameHost.getInstance();
+
+    gameHost.injectApp();
+
+    return {
+      gameHost
+    }
+  }
+});
 </script>
 
 <style lang="scss">
@@ -29,6 +40,10 @@ body {
 }
 
 #app {
+  position: absolute;
+  top: 0;
+  left: 0;
+
   width: 100%;
   height: 100%;
 
@@ -40,14 +55,23 @@ body {
 
   background-color: #111111;
 
+  z-index: 10;
+
   .main {
     height: 100%;
     width: 100%;
   }
 }
 
-canvas {
-  background: black;
+body > canvas {
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  z-index: 20;
+
+  pointer-events: none;
 }
 
 input {

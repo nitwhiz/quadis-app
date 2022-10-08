@@ -1,32 +1,29 @@
 import EventEmitter from 'eventemitter3';
 import axios from 'axios';
 import {
-  ClientEventType,
+  EVENT_ADD_PLAYER,
+  EVENT_REMOVE_PLAYER,
   EVENT_ROOM_HAS_GAMES_RUNNING,
   EVENT_SUCCESSFUL_HELLO,
-  EVENT_UPDATE_PLAYERS,
+  EVENT_UPDATE_MAIN_PLAYER,
+  SERVER_EVENT_GAME_OVER,
   SERVER_EVENT_GAME_START,
   SERVER_EVENT_HELLO,
   SERVER_EVENT_HELLO_ACK,
   SERVER_EVENT_PLAYER_JOIN,
   SERVER_EVENT_PLAYER_LEAVE,
+  SERVER_EVENT_UPDATE_BEDROCK_TARGETS,
+  specificEvent,
 } from '../event/EventType';
 import Player from '../player/Player';
 import {
+  BedrockTargetsUpdatePayload,
   HelloAckPayload,
   PlayerJoinPayload,
   PlayerLeavePayload,
   ServerEvent,
 } from '../event/EventPayload';
-import {
-  CMD_DOWN,
-  CMD_HARD_LOCK,
-  CMD_HOLD,
-  CMD_LEFT,
-  CMD_RIGHT,
-  CMD_ROTATE,
-  Command,
-} from '../command/Command';
+import { Command } from '../command/Command';
 import InputHandler, { EVENT_INPUT_COMMAND } from '../input/InputHandler';
 import KeyboardInputAdapter from '../input/adapter/KeyboardInputAdapter';
 import GamepadInputAdapter from '../input/adapter/GamepadInputAdapter';
@@ -34,14 +31,14 @@ import GamepadInputAdapter from '../input/adapter/GamepadInputAdapter';
 export const CHAN_ROOM = 'room';
 export const CHAN_NONE = 'none';
 
-export default class RoomService extends EventEmitter<ClientEventType> {
+export default class RoomService extends EventEmitter<string> {
   private readonly roomId: string;
 
   private socketConn: WebSocket | null;
 
-  private readonly players: Record<string, Player>;
-
   private readonly inputHandler: InputHandler;
+
+  private mainPlayer: Player | null;
 
   constructor(roomId: string) {
     super();
@@ -50,42 +47,12 @@ export default class RoomService extends EventEmitter<ClientEventType> {
 
     this.socketConn = null;
 
-    this.players = {};
-
     this.inputHandler = new InputHandler([
       new KeyboardInputAdapter(),
       new GamepadInputAdapter(),
     ]);
-  }
 
-  public getMainPlayer(): Player | null {
-    return Object.values(this.players).find((p) => p.isMain) || null;
-  }
-
-  public getOtherPlayers(): Player[] {
-    return Object.values(this.players)
-      .filter((p) => !p.isMain)
-      .sort((pA, pB) => pA.createAt - pB.createAt);
-  }
-
-  public addPlayer(player: Player): void {
-    const mainPlayer = this.getMainPlayer();
-
-    if (mainPlayer && mainPlayer.id === player.id) {
-      // prevent 2 main players
-      return;
-    }
-
-    this.players[player.id] = player;
-
-    this.emit(EVENT_UPDATE_PLAYERS);
-  }
-
-  public removePlayer(playerId: string) {
-    this.players[playerId]?.destroy();
-    delete this.players[playerId];
-
-    this.emit(EVENT_UPDATE_PLAYERS);
+    this.mainPlayer = null;
   }
 
   private addHelloListener(playerName: string) {
@@ -124,7 +91,7 @@ export default class RoomService extends EventEmitter<ClientEventType> {
     });
   }
 
-  private sendMainPlayerCommand(cmd: Command): void {
+  private sendPlayerCommand(cmd: Command): void {
     this.socketConn?.send(cmd);
   }
 
@@ -134,7 +101,7 @@ export default class RoomService extends EventEmitter<ClientEventType> {
 
       this.addHelloListener(playerName);
       this.inputHandler.on(EVENT_INPUT_COMMAND, (cmd: Command) => {
-        this.sendMainPlayerCommand(cmd);
+        this.sendPlayerCommand(cmd);
       });
       //this.addKeyboardHandler();
     });
@@ -150,12 +117,14 @@ export default class RoomService extends EventEmitter<ClientEventType> {
           if (msg.type === SERVER_EVENT_HELLO_ACK) {
             const e = msg as ServerEvent<HelloAckPayload>;
 
-            this.addPlayer(new Player(true, e.payload.you));
+            // retrieve main player as e.payload.you
+
+            this.mainPlayer = new Player(true, e.payload.you);
+
+            this.emit(EVENT_UPDATE_MAIN_PLAYER, this.mainPlayer);
 
             for (const p of e.payload.room.players) {
-              if (p.id !== e.payload.you.id) {
-                this.addPlayer(new Player(false, p));
-              }
+              this.emit(EVENT_ADD_PLAYER, new Player(false, p));
             }
           }
 
@@ -187,18 +156,30 @@ export default class RoomService extends EventEmitter<ClientEventType> {
         {
           const e = msg as ServerEvent<PlayerJoinPayload>;
 
-          this.addPlayer(new Player(false, e.payload));
+          if (this.mainPlayer?.id !== e.payload.id) {
+            this.emit(EVENT_ADD_PLAYER, new Player(false, e.payload));
+          }
         }
         break;
       case SERVER_EVENT_PLAYER_LEAVE:
         {
           const e = msg as ServerEvent<PlayerLeavePayload>;
 
-          this.removePlayer(e.payload.id);
+          this.emit(EVENT_REMOVE_PLAYER, e.payload.id);
         }
         break;
       case SERVER_EVENT_GAME_START:
-        Object.values(this.players).forEach((p) => p.startGame());
+        {
+          // todo: this is bad
+          this.emit(SERVER_EVENT_GAME_START);
+        }
+        break;
+      case SERVER_EVENT_UPDATE_BEDROCK_TARGETS:
+        {
+          const e = msg as ServerEvent<BedrockTargetsUpdatePayload>;
+
+          this.emit(SERVER_EVENT_UPDATE_BEDROCK_TARGETS, e.payload.targets);
+        }
         break;
       default:
         break;
@@ -208,23 +189,10 @@ export default class RoomService extends EventEmitter<ClientEventType> {
   private handleGameUpdateEventMessage(msg: ServerEvent<unknown>): void {
     const playerId = msg.channel.split('/')[1];
 
-    if (!playerId) {
-      console.warn('dropping event, no playerId');
-      return;
-    }
-
-    const player = this.players[playerId];
-
-    if (!player) {
-      console.warn('dropping event, player not found');
-      return;
-    }
-
-    const passEvent = player.dispatchServerEvent(msg);
-
-    if (passEvent !== null) {
-      this.emit(passEvent.type, passEvent.payload);
-    }
+    this.emit(specificEvent(msg.type, playerId), {
+      playerId,
+      payload: msg.payload,
+    });
   }
 
   public destroy() {

@@ -1,4 +1,4 @@
-import { ClientEventType, ServerEventType } from './EventType';
+import { RoomServiceEventType, ServerEventType } from './EventType';
 
 export interface PlayerPayload {
   id: string;
@@ -46,6 +46,14 @@ export interface ScoreUpdatePayload {
   lines: number;
 }
 
+export interface BedrockTargetsUpdatePayload {
+  targets: Record<string, string>;
+}
+
+export interface GameOverPayload {
+  player: PlayerPayload;
+}
+
 export interface ServerEvent<T> {
   channel: string;
   original_channel: string;
@@ -54,6 +62,6 @@ export interface ServerEvent<T> {
 }
 
 export interface ClientEvent<T> {
-  type: ClientEventType;
+  type: RoomServiceEventType;
   payload: T;
 }

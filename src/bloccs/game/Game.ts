@@ -1,4 +1,8 @@
-import * as PIXI from 'pixi.js';
+import Player from '../player/Player';
+import DOMLinkedContainer from '../common/DOMLinkedContainer';
+import GameDOMLinks from './GameDOMLinks';
+import SidePieceGraphics from '../graphics/SidePieceGraphics';
+import ColorMap from '../piece/color/ColorMap';
 import {
   getPieceDataXY,
   PieceBedrock,
@@ -10,19 +14,41 @@ import {
   PieceT,
   PieceZ,
 } from '../piece/PieceTable';
-import GameSettings from './GameSettings';
-import ColorMap from '../piece/color/ColorMap';
-import SidePieceGraphics from '../graphics/SidePieceGraphics';
-
-// todo: refactor
-
-const DEFAULT_BLOCKS_WIDTH = 10;
-const DEFAULT_BLOCKS_HEIGHT = 20;
-
-// todo: add piece width & height to display them centered
+import RoomService from '../room/RoomService';
+import {
+  SERVER_EVENT_GAME_OVER,
+  SERVER_EVENT_GAME_START,
+  SERVER_EVENT_UPDATE_FALLING_PIECE,
+  SERVER_EVENT_UPDATE_FIELD,
+  SERVER_EVENT_UPDATE_HOLD_PIECE,
+  SERVER_EVENT_UPDATE_NEXT_PIECE,
+  specificEvent,
+} from '../event/EventType';
+import {
+  ClientEvent,
+  FallingPieceUpdatePayload,
+  FieldUpdatePayload,
+  GameOverPayload,
+  HoldPieceUpdatePayload,
+  NextPieceUpdatePayload,
+  ServerEvent,
+} from '../event/EventPayload';
+import { Graphics } from 'pixi.js';
 
 export default class Game {
-  public readonly app: PIXI.Application;
+  private static BLOCK_SIZE_MAIN = 24;
+
+  private static BLOCK_SIZE_OPPONENT = 10;
+
+  public static DEFAULT_FIELD_HEIGHT = 20;
+
+  public static DEFAULT_FIELD_WIDTH = 10;
+
+  private readonly player: Player;
+
+  private readonly roomService: RoomService;
+
+  private readonly colorMap: ColorMap;
 
   private readonly blockSize: number;
 
@@ -32,28 +58,41 @@ export default class Game {
 
   private fieldHeight: number;
 
-  private readonly fieldGraphics: PIXI.Graphics;
+  private fallingPiece: number | null;
 
-  private readonly fallingPieceGraphics: PIXI.Graphics;
+  private fallingPieceX: number;
 
-  private fallingPieceName: number | null;
+  private fallingPieceY: number;
 
   private fallingPieceRotation: number;
 
-  private readonly colorMap: ColorMap;
+  private readonly fallingPieceGraphics: Graphics;
 
-  private readonly nextPieceGraphics: SidePieceGraphics;
+  private readonly linkedGameContainer: DOMLinkedContainer;
 
-  private readonly holdingPieceGraphics: SidePieceGraphics;
+  private readonly linkedNextPieceContainer: DOMLinkedContainer | null = null;
 
-  constructor(settings: GameSettings) {
-    this.app = new PIXI.Application({
-      view: settings.view,
-      width: DEFAULT_BLOCKS_WIDTH * settings.blockSize,
-      height: DEFAULT_BLOCKS_HEIGHT * settings.blockSize,
-      backgroundColor: 0x000000,
-      autoStart: false,
-    });
+  private readonly nextPieceGraphics: SidePieceGraphics | null = null;
+
+  private readonly linkedHoldPieceContainer: DOMLinkedContainer | null = null;
+
+  private readonly holdPieceGraphics: SidePieceGraphics | null = null;
+
+  private readonly fieldGraphics: Graphics;
+
+  private gameOver: boolean;
+
+  constructor(
+    player: Player,
+    domLinks: GameDOMLinks,
+    roomService: RoomService,
+  ) {
+    this.player = player;
+    this.roomService = roomService;
+
+    this.blockSize = this.player.isMain
+      ? Game.BLOCK_SIZE_MAIN
+      : Game.BLOCK_SIZE_OPPONENT;
 
     this.colorMap = new ColorMap();
 
@@ -66,114 +105,80 @@ export default class Game {
     this.colorMap.add(PieceZ, 0xe82c0c);
     this.colorMap.add(PieceBedrock, 0x333333);
 
-    this.nextPieceGraphics = new SidePieceGraphics(
-      settings.nextPieceView,
-      this.colorMap,
-    );
-    this.holdingPieceGraphics = new SidePieceGraphics(
-      settings.holdingPieceView,
-      this.colorMap,
-    );
-
-    console.debug('new pixi instance');
-
-    this.blockSize = settings.blockSize;
-
     this.fieldData = new Uint8Array(0);
-    this.fieldWidth = DEFAULT_BLOCKS_WIDTH;
-    this.fieldHeight = DEFAULT_BLOCKS_HEIGHT;
 
-    this.fieldGraphics = new PIXI.Graphics();
-    this.fallingPieceGraphics = new PIXI.Graphics();
+    this.fieldWidth = Game.DEFAULT_FIELD_WIDTH;
+    this.fieldHeight = Game.DEFAULT_FIELD_HEIGHT;
 
-    this.fallingPieceName = null;
-    this.fallingPieceRotation = -1;
+    this.fallingPiece = null;
+    this.fallingPieceX = 0;
+    this.fallingPieceY = 0;
+    this.fallingPieceRotation = 0;
+
+    this.fallingPieceGraphics = new Graphics();
+    this.fallingPieceGraphics.x = 0;
+    this.fallingPieceGraphics.y = 0;
+
+    this.linkedGameContainer = new DOMLinkedContainer(domLinks.gameContainer);
+
+    this.linkedGameContainer.setDOMDimensions(
+      this.blockSize * this.fieldWidth,
+      this.blockSize * this.fieldHeight,
+    );
+
+    if (domLinks.nextPieceContainer) {
+      this.linkedNextPieceContainer = new DOMLinkedContainer(
+        domLinks.nextPieceContainer,
+      );
+
+      this.nextPieceGraphics = new SidePieceGraphics(this.colorMap);
+
+      this.linkedNextPieceContainer.addChild(this.nextPieceGraphics);
+    }
+
+    if (domLinks.holdPieceContainer) {
+      this.linkedHoldPieceContainer = new DOMLinkedContainer(
+        domLinks.holdPieceContainer,
+      );
+
+      this.holdPieceGraphics = new SidePieceGraphics(this.colorMap);
+
+      this.linkedHoldPieceContainer.addChild(this.holdPieceGraphics);
+    }
+
+    this.initListeners();
+
+    this.fieldGraphics = new Graphics();
 
     this.fieldGraphics.x = 0;
     this.fieldGraphics.y = 0;
 
-    this.fallingPieceGraphics.x = 0;
-    this.fallingPieceGraphics.y = 0;
+    this.linkedGameContainer.addChild(
+      this.fieldGraphics,
+      this.fallingPieceGraphics,
+    );
 
-    this.app.stage.addChild(this.fieldGraphics, this.fallingPieceGraphics);
+    this.gameOver = false;
   }
 
-  public destroy(): void {
-    console.debug('destroying pixi instance');
+  private setField(width: number, height: number, data: number[]): void {
+    this.fieldWidth = width;
+    this.fieldHeight = height;
 
-    this.app.stop();
+    if (this.fieldData.length !== this.fieldWidth * this.fieldHeight) {
+      this.fieldData = new Uint8Array(data);
 
-    this.app.destroy(false, {
-      baseTexture: true,
-      children: true,
-      texture: true,
-    });
-  }
-
-  public setNextPiece(pieceName: number): void {
-    this.nextPieceGraphics.setPiece(pieceName, 0);
-  }
-
-  public setHoldPiece(pieceName: number | null): void {
-    this.holdingPieceGraphics.setPiece(pieceName, 0);
-  }
-
-  private updateFallingPieceGraphics(): void {
-    if (this.fallingPieceName === null) {
-      return;
-    }
-
-    this.fallingPieceGraphics.clear();
-
-    for (let x = 0; x < 4; ++x) {
-      for (let y = 0; y < 4; ++y) {
-        const blockData = getPieceDataXY(
-          this.fallingPieceName,
-          this.fallingPieceRotation,
-          x,
-          y,
-        );
-
-        if (blockData) {
-          this.fallingPieceGraphics.beginFill(
-            this.colorMap.getColor(blockData),
-          );
-          this.fallingPieceGraphics.drawRect(
-            x * this.blockSize,
-            y * this.blockSize,
-            this.blockSize,
-            this.blockSize,
-          );
-        }
-      }
-    }
-  }
-
-  public setFallingPiece(
-    pieceName: number,
-    pieceRotation: number,
-    x: number,
-    y: number,
-  ): void {
-    this.fallingPieceGraphics.x = x * this.blockSize;
-    this.fallingPieceGraphics.y = y * this.blockSize;
-
-    if (
-      pieceName !== this.fallingPieceName ||
-      pieceRotation !== this.fallingPieceRotation
-    ) {
-      this.fallingPieceName = pieceName;
-      this.fallingPieceRotation = pieceRotation;
-
-      this.updateFallingPieceGraphics();
+      this.linkedGameContainer.setDOMDimensions(
+        this.blockSize * this.fieldWidth,
+        this.blockSize * this.fieldHeight,
+      );
+    } else {
+      this.fieldData.set(data);
     }
   }
 
   private updateFieldGraphics(): void {
     this.fieldGraphics.clear();
-
-    this.fieldGraphics.width = this.fieldWidth * this.blockSize;
-    this.fieldGraphics.height = this.fieldHeight * this.blockSize;
 
     for (let x = 0; x < this.fieldWidth; ++x) {
       for (let y = 0; y < this.fieldHeight; ++y) {
@@ -206,23 +211,137 @@ export default class Game {
     }
   }
 
-  public setField(width: number, height: number, data: number[]): void {
-    this.fieldWidth = width;
-    this.fieldHeight = height;
+  private updateFallingPieceGraphics(): void {
+    this.fallingPieceGraphics.clear();
 
-    this.app.view.width = width * this.blockSize;
-    this.app.view.height = height * this.blockSize;
-
-    if (this.fieldData.length !== this.fieldWidth * this.fieldHeight) {
-      this.fieldData = new Uint8Array(data);
-    } else {
-      this.fieldData.set(data);
+    if (this.fallingPiece === null) {
+      return;
     }
 
-    this.updateFieldGraphics();
+    for (let x = 0; x < 4; ++x) {
+      for (let y = 0; y < 4; ++y) {
+        const blockData = getPieceDataXY(
+          this.fallingPiece,
+          this.fallingPieceRotation,
+          x,
+          y,
+        );
+
+        if (blockData) {
+          this.fallingPieceGraphics.beginFill(
+            this.colorMap.getColor(blockData),
+          );
+          this.fallingPieceGraphics.drawRect(
+            x * this.blockSize,
+            y * this.blockSize,
+            this.blockSize,
+            this.blockSize,
+          );
+        }
+      }
+    }
   }
 
-  public start() {
-    return this.app.start();
+  private initListeners() {
+    this.roomService.on(
+      specificEvent(SERVER_EVENT_UPDATE_NEXT_PIECE, this.getId()),
+      (event) => {
+        if (this.nextPieceGraphics) {
+          this.nextPieceGraphics.setPiece(
+            (event as ClientEvent<NextPieceUpdatePayload>).payload.piece_name,
+            0,
+          );
+        }
+      },
+    );
+
+    this.roomService.on(
+      specificEvent(SERVER_EVENT_UPDATE_HOLD_PIECE, this.getId()),
+      (event) => {
+        if (this.holdPieceGraphics) {
+          this.holdPieceGraphics.setPiece(
+            (event as ClientEvent<HoldPieceUpdatePayload>).payload.piece_name,
+            0,
+          );
+        }
+      },
+    );
+
+    this.roomService.on(
+      specificEvent(SERVER_EVENT_UPDATE_FIELD, this.getId()),
+      (event) => {
+        const e = event as ServerEvent<FieldUpdatePayload>;
+
+        this.setField(e.payload.width, e.payload.height, e.payload.data);
+
+        this.updateFieldGraphics();
+      },
+    );
+
+    this.roomService.on(
+      specificEvent(SERVER_EVENT_UPDATE_FALLING_PIECE, this.getId()),
+      (event) => {
+        const e = event as ServerEvent<FallingPieceUpdatePayload>;
+
+        this.fallingPiece = e.payload.piece_name;
+        this.fallingPieceRotation = e.payload.rotation;
+
+        this.fallingPieceGraphics.position.set(
+          e.payload.x * this.blockSize,
+          e.payload.y * this.blockSize,
+        );
+
+        this.updateFallingPieceGraphics();
+      },
+    );
+
+    this.roomService.on(
+      specificEvent(SERVER_EVENT_GAME_OVER, this.getId()),
+      () => this.handleGameOver(),
+    );
+
+    this.roomService.on(SERVER_EVENT_GAME_START, () => this.reset());
+  }
+
+  public reset(): void {
+    this.gameOver = false;
+
+    this.fallingPiece = null;
+
+    this.fieldData.fill(0);
+
+    this.linkedGameContainer.alpha = 1;
+
+    this.updateFieldGraphics();
+    this.updateFallingPieceGraphics();
+
+    this.nextPieceGraphics?.setPiece(null);
+    this.holdPieceGraphics?.setPiece(null);
+  }
+
+  private handleGameOver(): void {
+    this.gameOver = true;
+
+    this.linkedGameContainer.alpha = 0.25;
+  }
+
+  public getPlayer(): Player {
+    return this.player;
+  }
+
+  public getDOMLinkedGameContainer(): DOMLinkedContainer {
+    return this.linkedGameContainer;
+  }
+
+  public getDOMLinkedNextPieceContainer(): DOMLinkedContainer | null {
+    return this.linkedNextPieceContainer;
+  }
+
+  public getDOMLinkedHoldPieceContainer(): DOMLinkedContainer | null {
+    return this.linkedHoldPieceContainer;
+  }
+
+  public getId(): string {
+    return this.getPlayer().id;
   }
 }

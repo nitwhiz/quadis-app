@@ -20,11 +20,12 @@
           <button class="start" @click="roomService.start()">start</button>
         </div>
         <div class="other-games">
-          <div v-for="p in otherPlayers" :key="p.id" class="game other-game">
+          <div v-for="p in opponents" :key="p.id" class="game other-game">
             <GameDisplay
               :is-main="false"
               :room-service="roomService"
               :player="p"
+              :is-target="currentBedrockTargetId === p.id"
             />
           </div>
         </div>
@@ -42,9 +43,11 @@ import PlayerCustomization from '../../components/PlayerCustomization.vue';
 import GameDisplay from '../../components/GameDisplay.vue';
 import RoomService from '../../bloccs/room/RoomService';
 import {
+  EVENT_ADD_PLAYER,
+  EVENT_REMOVE_PLAYER,
   EVENT_ROOM_HAS_GAMES_RUNNING,
   EVENT_SUCCESSFUL_HELLO,
-  EVENT_UPDATE_PLAYERS,
+  EVENT_UPDATE_MAIN_PLAYER, SERVER_EVENT_UPDATE_BEDROCK_TARGETS
 } from '../../bloccs/event/EventType';
 import Player from '../../bloccs/player/Player';
 
@@ -60,7 +63,7 @@ export default defineComponent({
     return {
       roomId: params.roomId as string,
       playerName,
-      isConfirmed,
+      isConfirmed
     };
   },
   data() {
@@ -68,7 +71,8 @@ export default defineComponent({
       roomService: null as RoomService | null,
       error: null as 'room_has_running_games' | null,
       mainPlayer: null as Player | null,
-      otherPlayers: [] as Player[],
+      opponents: [] as Player[],
+      currentBedrockTargetId: null as string | null
     };
   },
   computed: {
@@ -88,21 +92,41 @@ export default defineComponent({
   },
   methods: {
     handlePlayerCustomizationConfirmation() {
+      this.error = null;
+
+      if (this.roomService !== null) {
+        this.roomService.removeAllListeners();
+        this.roomService = null;
+      }
+
       this.roomService = new RoomService(this.roomId);
 
       this.roomService.on(EVENT_SUCCESSFUL_HELLO, () => {
         this.isConfirmed = true;
       });
 
-      this.roomService.on(EVENT_UPDATE_PLAYERS, () => {
-        if (this.roomService) {
-          this.mainPlayer = this.roomService?.getMainPlayer();
-          this.otherPlayers = this.roomService?.getOtherPlayers();
-        }
+      this.roomService.on(EVENT_ADD_PLAYER, (player: Player) => {
+        this.opponents.push(player);
       });
+
+      this.roomService.on(EVENT_REMOVE_PLAYER, (playerId: string) => {
+        this.opponents = this.opponents.filter(p => p.id !== playerId);
+      });
+
+      this.roomService.on(EVENT_UPDATE_MAIN_PLAYER, (player: Player) => {
+        this.mainPlayer = player;
+      })
 
       this.roomService.on(EVENT_ROOM_HAS_GAMES_RUNNING, () => {
         this.error = 'room_has_running_games';
+      });
+
+      this.roomService.on(SERVER_EVENT_UPDATE_BEDROCK_TARGETS, (bedrockTargetMap: Record<string, string>) => {
+        if (this.mainPlayer && bedrockTargetMap[this.mainPlayer.id]) {
+          this.currentBedrockTargetId = bedrockTargetMap[this.mainPlayer.id];
+        } else {
+          this.currentBedrockTargetId = null;
+        }
       });
 
       this.roomService.connect(this.playerName);
@@ -133,7 +157,7 @@ export default defineComponent({
   .games {
     display: flex;
     justify-content: flex-start;
-    align-items: flex-start;
+    align-items: center;
 
     .game {
       margin: 12px;

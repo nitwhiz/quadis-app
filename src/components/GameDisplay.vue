@@ -1,22 +1,23 @@
 <template>
-  <div class="game-display" :class="isMain ? 'main' : undefined">
+  <div
+      :data-player-id="player.id"
+      class="game-display"
+      :class="[
+          isMain ? 'main' : undefined,
+          isTarget ? 'is-target' : undefined
+      ]"
+  >
     <div class="game-wrapper">
       <div class="player">{{ player.name }}</div>
       <div class="score-line">SCORE {{ score.score }}</div>
       <div class="score-line">LINES {{ score.lines }}</div>
-      <div class="canvas">
-        <canvas ref="gameCanvas" />
-      </div>
+      <div ref="game" class="game-canvas"></div>
     </div>
     <div v-if="isMain" class="meta">
       <div class="next">NEXT</div>
-      <div class="nextPiece">
-        <canvas ref="nextPieceCanvas" width="80" height="80" />
-      </div>
+      <div ref="nextPiece" class="next-piece"></div>
       <div class="hold">HOLD</div>
-      <div class="holdingPiece">
-        <canvas ref="holdingPieceCanvas" width="80" height="80" />
-      </div>
+      <div ref="holdingPiece" class="holding-piece"></div>
     </div>
   </div>
 </template>
@@ -25,6 +26,7 @@
 import { defineComponent, PropType, ref } from 'vue';
 import Player from '../bloccs/player/Player';
 import RoomService from '../bloccs/room/RoomService';
+import GameHost from '../bloccs/game/GameHost';
 import Game from '../bloccs/game/Game';
 
 export default defineComponent({
@@ -41,33 +43,42 @@ export default defineComponent({
       type: RoomService,
       required: true,
     },
+    isTarget: {
+      type: Boolean,
+      default: false
+    }
   },
   setup(props) {
     const score = ref(props.player.score);
+    const gameHost = GameHost.getInstance();
 
     return {
       score,
+      gameHost
     };
   },
+  data() {
+    return {
+      game: null as Game | null
+    }
+  },
   mounted() {
-    const mainGameCanvas = this.$refs.gameCanvas as HTMLCanvasElement;
-    const nextPieceCanvas = this.$refs.nextPieceCanvas as HTMLCanvasElement;
-    const holdingPieceCanvas = this.$refs
-      .holdingPieceCanvas as HTMLCanvasElement;
+    console.log('mount.');
 
-    this.player.setGame(
-      new Game({
-        view: mainGameCanvas,
-        nextPieceView: nextPieceCanvas,
-        holdingPieceView: holdingPieceCanvas,
-        blockSize: this.isMain ? 24 : 16,
-      }),
-    );
+    const game = new Game(this.player, {
+      gameContainer: this.$refs.game as HTMLDivElement,
+      nextPieceContainer: this.$refs.nextPiece as HTMLDivElement | undefined,
+      holdPieceContainer: this.$refs.holdingPiece as HTMLDivElement | undefined
+    }, this.roomService);
 
-    this.roomService.addPlayer(this.player);
+    this.gameHost.addGame(game);
+
+    this.game = game;
   },
   unmounted() {
-    this.roomService.removePlayer(this.player.id);
+    console.log('unmount.');
+
+    this.gameHost.removeGame(this.game?.getId() || 'dead-beef');
   },
 });
 </script>
@@ -80,6 +91,13 @@ export default defineComponent({
   background-color: #555;
   padding: 16px;
 
+  border: 3px solid transparent;
+  border-radius: 3px;
+
+  &.is-target {
+    border-color: rgba(255, 0, 0, .5);
+  }
+
   .meta {
     padding-left: 12px;
   }
@@ -88,6 +106,17 @@ export default defineComponent({
     .player {
       color: gold;
     }
+  }
+
+  .game-wrapper {
+    .game-canvas {
+      background: black;
+    }
+  }
+
+  .next-piece,
+  .holding-piece {
+    background: black;
   }
 
   .player,
@@ -115,10 +144,6 @@ export default defineComponent({
   .next,
   .hold {
     text-align: right;
-  }
-
-  canvas {
-    border: 1px solid black;
   }
 }
 </style>
