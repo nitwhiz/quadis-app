@@ -1,6 +1,6 @@
 <template>
   <div
-      :data-player-id="player.id"
+      :data-player-id="player.gameId"
       class="game-display"
       :class="[
           isMain ? 'main' : undefined,
@@ -24,10 +24,10 @@
 
 <script lang="ts">
 import { defineComponent, PropType, ref } from 'vue';
-import Player from '../bloccs/player/Player';
-import RoomService from '../bloccs/room/RoomService';
-import GameHost from '../bloccs/game/GameHost';
-import Game from '../bloccs/game/Game';
+import Player from '../quadis/player/Player';
+import RoomService from '../quadis/room/RoomService';
+import GameHost from '../quadis/game/GameHost';
+import Game from '../quadis/game/Game';
 
 export default defineComponent({
   props: {

@@ -5,7 +5,7 @@ import { Graphics } from 'pixi.js';
 export default class SidePieceGraphics extends Graphics {
   private readonly colorMap: ColorMap;
 
-  private currentPieceName: null | number;
+  private currentPieceToken: null | number;
 
   private currentPieceRotation: number;
 
@@ -14,16 +14,16 @@ export default class SidePieceGraphics extends Graphics {
 
     this.colorMap = colorMap;
 
-    this.currentPieceName = null;
+    this.currentPieceToken = null;
     this.currentPieceRotation = -1;
   }
 
-  public setPiece(pieceName: null | number, pieceRotation = 0): void {
+  public setPiece(pieceToken: null | number, pieceRotation = 0): void {
     if (
-      pieceName !== this.currentPieceName ||
+      pieceToken !== this.currentPieceToken ||
       pieceRotation !== this.currentPieceRotation
     ) {
-      this.currentPieceName = pieceName;
+      this.currentPieceToken = pieceToken;
       this.currentPieceRotation = pieceRotation;
 
       this.renderPiece();
@@ -31,7 +31,7 @@ export default class SidePieceGraphics extends Graphics {
   }
 
   public renderPiece(): void {
-    if (this.currentPieceName === null) {
+    if (this.currentPieceToken === null) {
       return;
     }
 
@@ -40,7 +40,7 @@ export default class SidePieceGraphics extends Graphics {
     for (let x = 0; x < 4; ++x) {
       for (let y = 0; y < 4; ++y) {
         const blockData = getPieceDataXY(
-          this.currentPieceName,
+          this.currentPieceToken,
           this.currentPieceRotation,
           x,
           y,

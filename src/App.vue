@@ -6,7 +6,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import GameHost from './bloccs/game/GameHost';
+import GameHost from './quadis/game/GameHost';
 
 export default defineComponent({
   setup() {

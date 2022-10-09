@@ -11,7 +11,7 @@
     </div>
     <div class="room">
       <div class="games">
-        <div v-if="mainPlayer" :key="mainPlayer.id" class="game current-game">
+        <div v-if="mainPlayer" :key="mainPlayer.gameId" class="game current-game">
           <GameDisplay
             :is-main="true"
             :room-service="roomService"
@@ -20,12 +20,12 @@
           <button class="start" @click="roomService.start()">start</button>
         </div>
         <div class="other-games">
-          <div v-for="p in opponents" :key="p.id" class="game other-game">
+          <div v-for="p in opponents" :key="p.gameId" class="game other-game">
             <GameDisplay
               :is-main="false"
               :room-service="roomService"
               :player="p"
-              :is-target="currentBedrockTargetId === p.id"
+              :is-target="currentBedrockTargetId === p.gameId"
             />
           </div>
         </div>
@@ -41,15 +41,11 @@ import usePlayerCustomization from '../../composables/usePlayerCustomization';
 import { useRoute } from 'vue-router';
 import PlayerCustomization from '../../components/PlayerCustomization.vue';
 import GameDisplay from '../../components/GameDisplay.vue';
-import RoomService from '../../bloccs/room/RoomService';
-import {
-  EVENT_ADD_PLAYER,
-  EVENT_REMOVE_PLAYER,
-  EVENT_ROOM_HAS_GAMES_RUNNING,
-  EVENT_SUCCESSFUL_HELLO,
-  EVENT_UPDATE_MAIN_PLAYER, SERVER_EVENT_UPDATE_BEDROCK_TARGETS
-} from '../../bloccs/event/EventType';
-import Player from '../../bloccs/player/Player';
+import RoomService from '../../quadis/room/RoomService';
+
+import Player from '../../quadis/player/Player';
+import { EVENT_ADD_PLAYER, EVENT_READY, EVENT_REMOVE_PLAYER, EVENT_ROOM_HAS_GAMES_RUNNING, EVENT_UPDATE_MAIN_PLAYER } from '../../quadis/event/ClientEvent';
+import { BedrockTargetsUpdateEvent, EVENT_BEDROCK_TARGETS_UPDATE, EVENT_SCORE_UPDATE, ScoreUpdateEvent } from '../../quadis/event/ServerEvent';
 
 export default defineComponent({
   components: {
@@ -101,7 +97,7 @@ export default defineComponent({
 
       this.roomService = new RoomService(this.roomId);
 
-      this.roomService.on(EVENT_SUCCESSFUL_HELLO, () => {
+      this.roomService.on(EVENT_READY, () => {
         this.isConfirmed = true;
       });
 
@@ -110,7 +106,7 @@ export default defineComponent({
       });
 
       this.roomService.on(EVENT_REMOVE_PLAYER, (playerId: string) => {
-        this.opponents = this.opponents.filter(p => p.id !== playerId);
+        this.opponents = this.opponents.filter(p => p.gameId !== playerId);
       });
 
       this.roomService.on(EVENT_UPDATE_MAIN_PLAYER, (player: Player) => {
@@ -121,11 +117,18 @@ export default defineComponent({
         this.error = 'room_has_running_games';
       });
 
-      this.roomService.on(SERVER_EVENT_UPDATE_BEDROCK_TARGETS, (bedrockTargetMap: Record<string, string>) => {
-        if (this.mainPlayer && bedrockTargetMap[this.mainPlayer.id]) {
-          this.currentBedrockTargetId = bedrockTargetMap[this.mainPlayer.id];
+      this.roomService.on(EVENT_BEDROCK_TARGETS_UPDATE, (event: BedrockTargetsUpdateEvent) => {
+        if (this.mainPlayer && event.payload.targets[this.mainPlayer.gameId]) {
+          this.currentBedrockTargetId = event.payload.targets[this.mainPlayer.gameId];
         } else {
           this.currentBedrockTargetId = null;
+        }
+      });
+
+      this.roomService.on(EVENT_SCORE_UPDATE, (event: ScoreUpdateEvent) => {
+        if (event.origin.id === this.mainPlayer?.gameId) {
+          this.mainPlayer.score.score = event.payload.score;
+          this.mainPlayer.score.lines = event.payload.lines;
         }
       });
 

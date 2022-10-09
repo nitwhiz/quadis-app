@@ -1,5 +1,5 @@
 {
-  "name": "bloccs-app",
+  "name": "quadis-app",
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",

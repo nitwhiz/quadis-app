@@ -15,25 +15,20 @@ import {
   PieceZ,
 } from '../piece/PieceTable';
 import RoomService from '../room/RoomService';
-import {
-  SERVER_EVENT_GAME_OVER,
-  SERVER_EVENT_GAME_START,
-  SERVER_EVENT_UPDATE_FALLING_PIECE,
-  SERVER_EVENT_UPDATE_FIELD,
-  SERVER_EVENT_UPDATE_HOLD_PIECE,
-  SERVER_EVENT_UPDATE_NEXT_PIECE,
-  specificEvent,
-} from '../event/EventType';
-import {
-  ClientEvent,
-  FallingPieceUpdatePayload,
-  FieldUpdatePayload,
-  GameOverPayload,
-  HoldPieceUpdatePayload,
-  NextPieceUpdatePayload,
-  ServerEvent,
-} from '../event/EventPayload';
 import { Graphics } from 'pixi.js';
+import { gameEventType } from '../event/ClientEvent';
+import {
+  EVENT_FALLING_PIECE_UPDATE,
+  EVENT_FIELD_UPDATE,
+  EVENT_GAME_OVER,
+  EVENT_HOLDING_PIECE_UPDATE,
+  EVENT_NEXT_PIECE_UPDATE,
+  EVENT_START,
+  FallingPieceUpdateEvent,
+  FieldUpdateEvent,
+  HoldingPieceUpdateEvent,
+  NextPieceUpdateEvent,
+} from '../event/ServerEvent';
 
 export default class Game {
   private static BLOCK_SIZE_MAIN = 24;
@@ -242,65 +237,58 @@ export default class Game {
     }
   }
 
+  private getEventType(type: string): string {
+    return gameEventType(type, this.getId());
+  }
+
   private initListeners() {
     this.roomService.on(
-      specificEvent(SERVER_EVENT_UPDATE_NEXT_PIECE, this.getId()),
-      (event) => {
+      this.getEventType(EVENT_NEXT_PIECE_UPDATE),
+      (event: NextPieceUpdateEvent) => {
         if (this.nextPieceGraphics) {
-          this.nextPieceGraphics.setPiece(
-            (event as ClientEvent<NextPieceUpdatePayload>).payload.piece_name,
-            0,
-          );
+          this.nextPieceGraphics.setPiece(event.payload.token, 0);
         }
       },
     );
 
     this.roomService.on(
-      specificEvent(SERVER_EVENT_UPDATE_HOLD_PIECE, this.getId()),
-      (event) => {
+      this.getEventType(EVENT_HOLDING_PIECE_UPDATE),
+      (event: HoldingPieceUpdateEvent) => {
         if (this.holdPieceGraphics) {
-          this.holdPieceGraphics.setPiece(
-            (event as ClientEvent<HoldPieceUpdatePayload>).payload.piece_name,
-            0,
-          );
+          this.holdPieceGraphics.setPiece(event.payload.token, 0);
         }
       },
     );
 
     this.roomService.on(
-      specificEvent(SERVER_EVENT_UPDATE_FIELD, this.getId()),
-      (event) => {
-        const e = event as ServerEvent<FieldUpdatePayload>;
-
-        this.setField(e.payload.width, e.payload.height, e.payload.data);
+      this.getEventType(EVENT_FIELD_UPDATE),
+      (event: FieldUpdateEvent) => {
+        this.setField(10, 20, event.payload.data);
 
         this.updateFieldGraphics();
       },
     );
 
     this.roomService.on(
-      specificEvent(SERVER_EVENT_UPDATE_FALLING_PIECE, this.getId()),
-      (event) => {
-        const e = event as ServerEvent<FallingPieceUpdatePayload>;
-
-        this.fallingPiece = e.payload.piece_name;
-        this.fallingPieceRotation = e.payload.rotation;
+      this.getEventType(EVENT_FALLING_PIECE_UPDATE),
+      (event: FallingPieceUpdateEvent) => {
+        this.fallingPiece = event.payload.piece.token;
+        this.fallingPieceRotation = event.payload.rotation;
 
         this.fallingPieceGraphics.position.set(
-          e.payload.x * this.blockSize,
-          e.payload.y * this.blockSize,
+          event.payload.x * this.blockSize,
+          event.payload.y * this.blockSize,
         );
 
         this.updateFallingPieceGraphics();
       },
     );
 
-    this.roomService.on(
-      specificEvent(SERVER_EVENT_GAME_OVER, this.getId()),
-      () => this.handleGameOver(),
+    this.roomService.on(this.getEventType(EVENT_GAME_OVER), () =>
+      this.handleGameOver(),
     );
 
-    this.roomService.on(SERVER_EVENT_GAME_START, () => this.reset());
+    this.roomService.on(EVENT_START, () => this.reset());
   }
 
   public reset(): void {
@@ -342,6 +330,6 @@ export default class Game {
   }
 
   public getId(): string {
-    return this.getPlayer().id;
+    return this.getPlayer().gameId;
   }
 }
