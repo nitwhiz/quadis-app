@@ -1,4 +1,4 @@
-import { getPieceDataXY } from '../piece/PieceTable';
+import { getPieceDataXY } from '../piece/Piece';
 import ColorMap from '../piece/color/ColorMap';
 import { Graphics } from 'pixi.js';
 

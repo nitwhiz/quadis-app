@@ -3,17 +3,7 @@ import DOMLinkedContainer from '../common/DOMLinkedContainer';
 import GameDOMLinks from './GameDOMLinks';
 import SidePieceGraphics from '../graphics/SidePieceGraphics';
 import ColorMap from '../piece/color/ColorMap';
-import {
-  getPieceDataXY,
-  PieceBedrock,
-  PieceI,
-  PieceJ,
-  PieceL,
-  PieceO,
-  PieceS,
-  PieceT,
-  PieceZ,
-} from '../piece/PieceTable';
+import { Piece } from '../piece/Piece';
 import RoomService from '../room/RoomService';
 import { Graphics } from 'pixi.js';
 import { gameEventType } from '../event/ClientEvent';
@@ -29,6 +19,7 @@ import {
   HoldingPieceUpdateEvent,
   NextPieceUpdateEvent,
 } from '../event/ServerEvent';
+import { PieceContainer } from '../graphics/PieceContainer';
 
 export default class Game {
   private static BLOCK_SIZE_MAIN = 24;
@@ -53,15 +44,7 @@ export default class Game {
 
   private fieldHeight: number;
 
-  private fallingPiece: number | null;
-
-  private fallingPieceX: number;
-
-  private fallingPieceY: number;
-
-  private fallingPieceRotation: number;
-
-  private readonly fallingPieceGraphics: Graphics;
+  private readonly fallingPieceContainer: PieceContainer;
 
   private readonly linkedGameContainer: DOMLinkedContainer;
 
@@ -91,28 +74,27 @@ export default class Game {
 
     this.colorMap = new ColorMap();
 
-    this.colorMap.add(PieceI, 0x0caee8);
-    this.colorMap.add(PieceO, 0xf2f200);
-    this.colorMap.add(PieceL, 0xffce0d);
-    this.colorMap.add(PieceJ, 0xebaf0c);
-    this.colorMap.add(PieceS, 0x0cb14a);
-    this.colorMap.add(PieceT, 0xac0ce8);
-    this.colorMap.add(PieceZ, 0xe82c0c);
-    this.colorMap.add(PieceBedrock, 0x333333);
+    this.colorMap.setColor(Piece.I, 0x0caee8);
+    this.colorMap.setColor(Piece.O, 0xf2f200);
+    this.colorMap.setColor(Piece.L, 0xffce0d);
+    this.colorMap.setColor(Piece.J, 0xebaf0c);
+    this.colorMap.setColor(Piece.S, 0x0cb14a);
+    this.colorMap.setColor(Piece.T, 0xac0ce8);
+    this.colorMap.setColor(Piece.Z, 0xe82c0c);
+    this.colorMap.setColor(Piece.B, 0x333333);
 
     this.fieldData = new Uint8Array(0);
 
     this.fieldWidth = Game.DEFAULT_FIELD_WIDTH;
     this.fieldHeight = Game.DEFAULT_FIELD_HEIGHT;
 
-    this.fallingPiece = null;
-    this.fallingPieceX = 0;
-    this.fallingPieceY = 0;
-    this.fallingPieceRotation = 0;
+    this.fallingPieceContainer = new PieceContainer(
+      this.blockSize,
+      this.colorMap,
+    );
 
-    this.fallingPieceGraphics = new Graphics();
-    this.fallingPieceGraphics.x = 0;
-    this.fallingPieceGraphics.y = 0;
+    this.fallingPieceContainer.x = 0;
+    this.fallingPieceContainer.y = 0;
 
     this.linkedGameContainer = new DOMLinkedContainer(domLinks.gameContainer);
 
@@ -150,7 +132,7 @@ export default class Game {
 
     this.linkedGameContainer.addChild(
       this.fieldGraphics,
-      this.fallingPieceGraphics,
+      this.fallingPieceContainer,
     );
 
     this.gameOver = false;
@@ -206,37 +188,6 @@ export default class Game {
     }
   }
 
-  private updateFallingPieceGraphics(): void {
-    this.fallingPieceGraphics.clear();
-
-    if (this.fallingPiece === null) {
-      return;
-    }
-
-    for (let x = 0; x < 4; ++x) {
-      for (let y = 0; y < 4; ++y) {
-        const blockData = getPieceDataXY(
-          this.fallingPiece,
-          this.fallingPieceRotation,
-          x,
-          y,
-        );
-
-        if (blockData) {
-          this.fallingPieceGraphics.beginFill(
-            this.colorMap.getColor(blockData),
-          );
-          this.fallingPieceGraphics.drawRect(
-            x * this.blockSize,
-            y * this.blockSize,
-            this.blockSize,
-            this.blockSize,
-          );
-        }
-      }
-    }
-  }
-
   private getEventType(type: string): string {
     return gameEventType(type, this.getId());
   }
@@ -272,15 +223,13 @@ export default class Game {
     this.roomService.on(
       this.getEventType(EVENT_FALLING_PIECE_UPDATE),
       (event: FallingPieceUpdateEvent) => {
-        this.fallingPiece = event.payload.piece.token;
-        this.fallingPieceRotation = event.payload.rotation;
+        this.fallingPieceContainer.piece = event.payload.piece.token;
+        this.fallingPieceContainer.rotation = event.payload.rotation;
 
-        this.fallingPieceGraphics.position.set(
+        this.fallingPieceContainer.position.set(
           event.payload.x * this.blockSize,
           event.payload.y * this.blockSize,
         );
-
-        this.updateFallingPieceGraphics();
       },
     );
 
@@ -294,14 +243,13 @@ export default class Game {
   public reset(): void {
     this.gameOver = false;
 
-    this.fallingPiece = null;
+    this.fallingPieceContainer.piece = null;
 
     this.fieldData.fill(0);
 
     this.linkedGameContainer.alpha = 1;
 
     this.updateFieldGraphics();
-    this.updateFallingPieceGraphics();
 
     this.nextPieceGraphics?.setPiece(null);
     this.holdPieceGraphics?.setPiece(null);

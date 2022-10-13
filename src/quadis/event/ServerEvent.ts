@@ -1,3 +1,5 @@
+import { Piece } from '../piece/Piece';
+
 export const EVENT_HELLO = 'hello';
 export const EVENT_HELLO_ACK = 'hello_ack';
 
@@ -76,7 +78,7 @@ export interface RoomPayload {
 }
 
 export interface PiecePayload {
-  token: number;
+  token: Piece;
 }
 
 export interface FallingPiecePayload {

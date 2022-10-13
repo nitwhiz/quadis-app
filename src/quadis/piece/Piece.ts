@@ -1,20 +1,21 @@
-const I = 'I'.charCodeAt(0);
-const O = 'O'.charCodeAt(0);
-const L = 'L'.charCodeAt(0);
-const J = 'J'.charCodeAt(0);
-const S = 'S'.charCodeAt(0);
-const T = 'T'.charCodeAt(0);
-const Z = 'Z'.charCodeAt(0);
+export const enum Piece {
+  I = 1,
+  O = 2,
+  L = 3,
+  J = 4,
+  S = 5,
+  T = 6,
+  Z = 7,
+  B = 8,
+}
 
-export const PieceI = I;
-export const PieceO = O;
-export const PieceL = L;
-export const PieceJ = J;
-export const PieceS = S;
-export const PieceT = T;
-export const PieceZ = Z;
-
-export const PieceBedrock = 'B'.charCodeAt(0);
+const I = Piece.I;
+const O = Piece.O;
+const L = Piece.L;
+const J = Piece.J;
+const S = Piece.S;
+const T = Piece.T;
+const Z = Piece.Z;
 
 const pieceDataI = [
   new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, I, I, I, I, 0, 0, 0, 0]),
@@ -60,27 +61,38 @@ const pieceDataZ = [
   new Uint8Array([0, 0, Z, 0, 0, Z, Z, 0, 0, Z, 0, 0, 0, 0, 0, 0]),
 ];
 
-export const PieceTable = {
-  [I]: pieceDataI,
-  [O]: pieceDataO,
-  [L]: pieceDataL,
-  [J]: pieceDataJ,
-  [S]: pieceDataS,
-  [T]: pieceDataT,
-  [Z]: pieceDataZ,
+export const PieceDataTable: Record<Piece, Uint8Array[] | null> = {
+  [Piece.I]: pieceDataI,
+  [Piece.O]: pieceDataO,
+  [Piece.L]: pieceDataL,
+  [Piece.J]: pieceDataJ,
+  [Piece.S]: pieceDataS,
+  [Piece.T]: pieceDataT,
+  [Piece.Z]: pieceDataZ,
+  [Piece.B]: null,
 };
 
-const clampRotation = (pieceName: number, rot: number): number => {
-  return rot % (PieceTable[pieceName] || []).length;
+export const getFaceCount = (piece: Piece): number => {
+  return (PieceDataTable[piece] || []).length;
+};
+
+export const clampRotation = (piece: Piece, rot: number): number => {
+  return Math.floor(rot % getFaceCount(piece));
 };
 
 export const getPieceDataXY = (
-  pieceName: number,
+  piece: Piece,
   rot: number,
   x: number,
   y: number,
 ): number => {
-  const cRot = clampRotation(pieceName, rot);
+  const pieceData = PieceDataTable[piece];
 
-  return PieceTable[pieceName][cRot][y * 4 + x];
+  if (pieceData === null) {
+    return 0;
+  }
+
+  const cRot = clampRotation(piece, rot);
+
+  return pieceData[cRot][y * 4 + x];
 };
