@@ -1,25 +1,21 @@
 import { Piece } from '../Piece';
 
 export default class ColorMap {
-  public static readonly DEFAULT_COLOR = 0xff00ff;
+  public static readonly DEFAULT_COLOR_MAP = new ColorMap({
+    [Piece.I]: 0x0caee8,
+    [Piece.O]: 0xf2f200,
+    [Piece.L]: 0xffce0d,
+    [Piece.J]: 0xebaf0c,
+    [Piece.S]: 0x0cb14a,
+    [Piece.T]: 0xac0ce8,
+    [Piece.Z]: 0xe82c0c,
+    [Piece.B]: 0x333333,
+  });
 
   private readonly colors: Record<Piece, number>;
 
-  constructor() {
-    this.colors = {
-      [Piece.I]: ColorMap.DEFAULT_COLOR,
-      [Piece.O]: ColorMap.DEFAULT_COLOR,
-      [Piece.L]: ColorMap.DEFAULT_COLOR,
-      [Piece.J]: ColorMap.DEFAULT_COLOR,
-      [Piece.S]: ColorMap.DEFAULT_COLOR,
-      [Piece.T]: ColorMap.DEFAULT_COLOR,
-      [Piece.Z]: ColorMap.DEFAULT_COLOR,
-      [Piece.B]: ColorMap.DEFAULT_COLOR,
-    };
-  }
-
-  public setColor(piece: Piece, color: number) {
-    this.colors[piece] = color;
+  constructor(colors: Record<Piece, number>) {
+    this.colors = colors;
   }
 
   public getColor(piece: Piece): number {

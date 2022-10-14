@@ -175,13 +175,6 @@ export default class RoomService extends EventEmitter<
     }
   }
 
-  public destroy() {
-    // todo: remove event listeners?
-
-    this.socketConn?.close();
-    this.socketConn = null;
-  }
-
   public start(): Promise<boolean> {
     return axios
       .post(

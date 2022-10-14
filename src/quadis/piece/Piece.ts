@@ -96,3 +96,7 @@ export const getPieceDataXY = (
 
   return pieceData[cRot][y * 4 + x];
 };
+
+export const BLOCK_SIZE_SIDE_PIECE = 12;
+export const BLOCK_SIZE_MAIN_FIELD = 24;
+export const BLOCK_SIZE_OPPONENT_FIELD = 10;

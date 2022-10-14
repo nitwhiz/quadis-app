@@ -1,5 +1,5 @@
-import { Application, UPDATE_PRIORITY } from 'pixi.js';
-import Game from './Game';
+import { Application } from 'pixi.js';
+import GameContainer from './GameContainer';
 
 export default class GameHost {
   private static INSTANCE: GameHost | null;
@@ -8,56 +8,22 @@ export default class GameHost {
 
   private readonly app: Application;
 
-  private readonly games: Record<string, Game>;
-
-  private readonly tickerCallbacks: Record<string, () => void>;
+  private readonly games: Record<string, GameContainer>;
 
   private constructor() {
     this.app = new Application({
       resizeTo: window,
-      backgroundColor: 0x000000,
       backgroundAlpha: 0,
       autoStart: true,
     });
 
     this.games = {};
-    this.tickerCallbacks = {};
   }
 
-  public addGame(game: Game) {
-    const linkedGameContainer = game.getDOMLinkedGameContainer();
-    const linkedNextPieceContainer = game.getDOMLinkedNextPieceContainer();
-    const linkedHoldPieceContainer = game.getDOMLinkedHoldPieceContainer();
-
-    this.app.stage.addChild(linkedGameContainer);
-
-    if (linkedNextPieceContainer) {
-      this.app.stage.addChild(linkedNextPieceContainer);
-
-      linkedNextPieceContainer.setDOMDimensions(20 + 15 * 4, 20 + 15 * 4);
-    }
-
-    if (linkedHoldPieceContainer) {
-      this.app.stage.addChild(linkedHoldPieceContainer);
-
-      linkedHoldPieceContainer.setDOMDimensions(20 + 15 * 4, 20 + 15 * 4);
-    }
-
-    // prevent glitching layout
-    linkedGameContainer.update(true);
-    linkedNextPieceContainer?.update(true);
-    linkedHoldPieceContainer?.update(true);
-
-    const cb = () => {
-      linkedGameContainer.update();
-      linkedNextPieceContainer?.update();
-      linkedHoldPieceContainer?.update();
-    };
-
-    this.app.ticker.add(cb, this, UPDATE_PRIORITY.UTILITY);
+  public addGame(game: GameContainer) {
+    this.app.stage.addChild(game);
 
     this.games[game.getId()] = game;
-    this.tickerCallbacks[game.getId()] = cb;
   }
 
   public removeGame(id: string) {
@@ -66,26 +32,13 @@ export default class GameHost {
       return;
     }
 
-    const linkedGameContainer = this.games[id].getDOMLinkedGameContainer();
-    const linkedNextPieceContainer =
-      this.games[id].getDOMLinkedNextPieceContainer();
-    const linkedHoldPieceContainer =
-      this.games[id].getDOMLinkedHoldPieceContainer();
+    this.app.stage.removeChild(this.games[id]);
 
-    this.app.stage.removeChild(linkedGameContainer);
-
-    if (linkedNextPieceContainer) {
-      this.app.stage.removeChild(linkedNextPieceContainer);
-    }
-
-    if (linkedHoldPieceContainer) {
-      this.app.stage.removeChild(linkedHoldPieceContainer);
-    }
-
-    this.app.ticker.remove(this.tickerCallbacks[id], this);
+    this.games[id].destroy({
+      children: true,
+    });
 
     delete this.games[id];
-    delete this.tickerCallbacks[id];
   }
 
   public injectApp(): void {

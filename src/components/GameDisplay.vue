@@ -27,7 +27,7 @@ import { defineComponent, PropType, ref } from 'vue';
 import Player from '../quadis/player/Player';
 import RoomService from '../quadis/room/RoomService';
 import GameHost from '../quadis/game/GameHost';
-import Game from '../quadis/game/Game';
+import GameContainer from '../quadis/game/GameContainer';
 
 export default defineComponent({
   props: {
@@ -59,16 +59,16 @@ export default defineComponent({
   },
   data() {
     return {
-      game: null as Game | null
+      game: null as GameContainer | null
     }
   },
   mounted() {
     console.log('mount.');
 
-    const game = new Game(this.player, {
+    const game = new GameContainer(this.player, {
       gameContainer: this.$refs.game as HTMLDivElement,
       nextPieceContainer: this.$refs.nextPiece as HTMLDivElement | undefined,
-      holdPieceContainer: this.$refs.holdingPiece as HTMLDivElement | undefined
+      holdingPieceContainer: this.$refs.holdingPiece as HTMLDivElement | undefined
     }, this.roomService);
 
     this.gameHost.addGame(game);
