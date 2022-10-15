@@ -9,11 +9,13 @@ import {
   EVENT_GAME_OVER,
   EVENT_HOLDING_PIECE_UPDATE,
   EVENT_NEXT_PIECE_UPDATE,
+  EVENT_SCORE_UPDATE,
   EVENT_START,
   FallingPieceUpdateEvent,
   FieldUpdateEvent,
   HoldingPieceUpdateEvent,
   NextPieceUpdateEvent,
+  ScoreUpdateEvent,
 } from '../event/ServerEvent';
 import {
   BLOCK_SIZE_MAIN_FIELD,
@@ -99,6 +101,14 @@ export default class GameContainer extends Container {
   }
 
   private initListeners() {
+    this.roomService.on(
+      this.getEventType(EVENT_SCORE_UPDATE),
+      (event: ScoreUpdateEvent) => {
+        this.player.score.score = event.payload.score;
+        this.player.score.lines = event.payload.lines;
+      },
+    );
+
     this.roomService.on(
       this.getEventType(EVENT_NEXT_PIECE_UPDATE),
       (event: NextPieceUpdateEvent) => {
