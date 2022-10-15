@@ -138,6 +138,7 @@ export default class RoomService extends EventEmitter<
               true,
               event.payload.controlledGame.id,
               event.payload.controlledGame.playerName,
+              event.payload.host,
             );
 
             this.emit(EVENT_UPDATE_MAIN_PLAYER, this.mainPlayer);

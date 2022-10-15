@@ -9,11 +9,14 @@ export default class Player {
 
   public readonly score: Score;
 
-  constructor(isMain: boolean, gameId: string, name: string) {
+  public readonly isHost: boolean;
+
+  constructor(isMain: boolean, gameId: string, name: string, isHost = false) {
     this.isMain = isMain;
 
     this.gameId = gameId;
     this.name = name;
+    this.isHost = isHost;
 
     this.score = {
       score: 0,

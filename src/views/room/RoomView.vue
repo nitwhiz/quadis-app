@@ -16,7 +16,7 @@
             :is-main="true"
             :player="mainPlayer"
           />
-          <button class="start" @click="start">start</button>
+          <button v-if="mainPlayer.isHost" ref="start" class="start" @click="start">START</button>
         </div>
         <div class="other-games">
           <div v-for="p in opponents" :key="p.gameId" class="game other-game">
