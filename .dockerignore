@@ -1,0 +1,9 @@
+.idea/
+dist/
+node_modules/
+
+.dockerignore
+.gitignore
+.nvmrc
+.prettierrc.json
+README.md
