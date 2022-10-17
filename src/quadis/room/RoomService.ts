@@ -29,6 +29,8 @@ import {
 export default class RoomService extends EventEmitter<
   ServerEventTypes | ClientEventTypes | string
 > {
+  private static INSTANCE: RoomService | null = null;
+
   private readonly roomId: string;
 
   private socketConn: WebSocket | null;
@@ -50,6 +52,22 @@ export default class RoomService extends EventEmitter<
     ]);
 
     this.mainPlayer = null;
+  }
+
+  public static getInstance(roomId: string | null = null): RoomService {
+    // todo: this is weird design
+
+    if (roomId !== null) {
+      if (RoomService.INSTANCE !== null) {
+        RoomService.INSTANCE.removeAllListeners();
+      }
+
+      RoomService.INSTANCE = new RoomService(roomId);
+    } else if (RoomService.INSTANCE === null) {
+      throw new Error('missing room instance');
+    }
+
+    return RoomService.INSTANCE;
   }
 
   private addHelloListener(playerName: string) {

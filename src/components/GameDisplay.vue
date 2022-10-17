@@ -39,10 +39,6 @@ export default defineComponent({
       type: Object as PropType<Player>,
       required: true,
     },
-    roomService: {
-      type: RoomService,
-      required: true,
-    },
     isTarget: {
       type: Boolean,
       default: false
@@ -69,7 +65,7 @@ export default defineComponent({
       gameContainer: this.$refs.game as HTMLDivElement,
       nextPieceContainer: this.$refs.nextPiece as HTMLDivElement | undefined,
       holdingPieceContainer: this.$refs.holdingPiece as HTMLDivElement | undefined
-    }, this.roomService);
+    }, RoomService.getInstance());
 
     this.gameHost.addGame(game);
 

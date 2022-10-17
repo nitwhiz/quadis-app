@@ -14,16 +14,14 @@
         <div v-if="mainPlayer" :key="mainPlayer.gameId" class="game current-game">
           <GameDisplay
             :is-main="true"
-            :room-service="roomService"
             :player="mainPlayer"
           />
-          <button class="start" @click="roomService.start()">start</button>
+          <button class="start" @click="start">start</button>
         </div>
         <div class="other-games">
           <div v-for="p in opponents" :key="p.gameId" class="game other-game">
             <GameDisplay
               :is-main="false"
-              :room-service="roomService"
               :player="p"
               :is-target="currentBedrockTargetId === p.gameId"
             />
@@ -64,7 +62,6 @@ export default defineComponent({
   },
   data() {
     return {
-      roomService: null as RoomService | null,
       error: null as 'room_has_running_games' | null,
       mainPlayer: null as Player | null,
       opponents: [] as Player[],
@@ -87,37 +84,35 @@ export default defineComponent({
     }
   },
   methods: {
+    start() {
+      RoomService.getInstance().start();
+    },
     handlePlayerCustomizationConfirmation() {
       this.error = null;
 
-      if (this.roomService !== null) {
-        this.roomService.removeAllListeners();
-        this.roomService = null;
-      }
+      const roomService = RoomService.getInstance(this.roomId);
 
-      this.roomService = new RoomService(this.roomId);
-
-      this.roomService.on(EVENT_READY, () => {
+      roomService.on(EVENT_READY, () => {
         this.isConfirmed = true;
       });
 
-      this.roomService.on(EVENT_ADD_PLAYER, (player: Player) => {
+      roomService.on(EVENT_ADD_PLAYER, (player: Player) => {
         this.opponents.push(player);
       });
 
-      this.roomService.on(EVENT_REMOVE_PLAYER, (playerId: string) => {
+      roomService.on(EVENT_REMOVE_PLAYER, (playerId: string) => {
         this.opponents = this.opponents.filter(p => p.gameId !== playerId);
       });
 
-      this.roomService.on(EVENT_UPDATE_MAIN_PLAYER, (player: Player) => {
+      roomService.on(EVENT_UPDATE_MAIN_PLAYER, (player: Player) => {
         this.mainPlayer = player;
       })
 
-      this.roomService.on(EVENT_ROOM_HAS_GAMES_RUNNING, () => {
+      roomService.on(EVENT_ROOM_HAS_GAMES_RUNNING, () => {
         this.error = 'room_has_running_games';
       });
 
-      this.roomService.on(EVENT_BEDROCK_TARGETS_UPDATE, (event: BedrockTargetsUpdateEvent) => {
+      roomService.on(EVENT_BEDROCK_TARGETS_UPDATE, (event: BedrockTargetsUpdateEvent) => {
         if (this.mainPlayer && event.payload.targets[this.mainPlayer.gameId]) {
           this.currentBedrockTargetId = event.payload.targets[this.mainPlayer.gameId];
         } else {
@@ -125,14 +120,14 @@ export default defineComponent({
         }
       });
 
-      this.roomService.on(EVENT_SCORE_UPDATE, (event: ScoreUpdateEvent) => {
+      roomService.on(EVENT_SCORE_UPDATE, (event: ScoreUpdateEvent) => {
         if (event.origin.id === this.mainPlayer?.gameId) {
           this.mainPlayer.score.score = event.payload.score;
           this.mainPlayer.score.lines = event.payload.lines;
         }
       });
 
-      this.roomService.connect(this.playerName);
+      roomService.connect(this.playerName);
     },
   },
 });
