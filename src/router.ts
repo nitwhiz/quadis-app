@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 import axios from 'axios';
+import RoomService from './quadis/room/RoomService';
 
 export default createRouter({
   history: createWebHistory('/'),
@@ -17,7 +18,11 @@ export default createRouter({
         const roomId = to.params.roomId;
 
         axios
-          .get(`http://${import.meta.env.VITE_GAME_SERVER}/rooms/${roomId}`)
+          .get(
+            `${RoomService.tls ? 'https' : 'http'}://${
+              RoomService.gameServer
+            }/rooms/${roomId}`,
+          )
           .then(() => next())
           .catch(() =>
             next({

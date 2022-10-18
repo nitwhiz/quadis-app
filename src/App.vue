@@ -1,5 +1,5 @@
 <template>
-  <div class="main">
+  <div v-if="ready" class="main">
     <router-view />
   </div>
 </template>
@@ -7,6 +7,8 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import GameHost from './quadis/game/GameHost';
+import { useEnvironment } from './composables/useEnvironment';
+import RoomService from './quadis/room/RoomService';
 
 export default defineComponent({
   setup() {
@@ -17,6 +19,19 @@ export default defineComponent({
     return {
       gameHost
     }
+  },
+  data() {
+    return {
+      ready: false
+    };
+  },
+  mounted(): void {
+    useEnvironment().then((env) => {
+      RoomService.gameServer = env.gameServer.value;
+      RoomService.tls = env.tls.value;
+
+      this.ready = true;
+    })
   }
 });
 </script>

@@ -29,6 +29,10 @@ import {
 export default class RoomService extends EventEmitter<
   ServerEventTypes | ClientEventTypes | string
 > {
+  public static gameServer = 'localhost:7000';
+
+  public static tls = false;
+
   private static INSTANCE: RoomService | null = null;
 
   private readonly roomId: string;
@@ -162,7 +166,9 @@ export default class RoomService extends EventEmitter<
 
   public connect(playerName: string): void {
     this.socketConn = new WebSocket(
-      `ws://${import.meta.env.VITE_GAME_SERVER}/rooms/${this.roomId}/socket`,
+      `${RoomService.tls ? 'wss' : 'ws'}://${RoomService.gameServer}/rooms/${
+        this.roomId
+      }/socket`,
     );
 
     this.addCloseListener();
@@ -196,7 +202,9 @@ export default class RoomService extends EventEmitter<
   public start(): Promise<boolean> {
     return axios
       .post(
-        `http://${import.meta.env.VITE_GAME_SERVER}/rooms/${this.roomId}/start`,
+        `${RoomService.tls ? 'https' : 'http'}://${
+          RoomService.gameServer
+        }/rooms/${this.roomId}/start`,
       )
       .then(() => {
         return true;

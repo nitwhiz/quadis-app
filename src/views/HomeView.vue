@@ -9,6 +9,7 @@
 import { defineComponent } from 'vue';
 import axios from 'axios';
 import PlayerCustomization from '../components/PlayerCustomization.vue';
+import RoomService from '../quadis/room/RoomService';
 
 export default defineComponent({
   components: {
@@ -17,7 +18,7 @@ export default defineComponent({
   methods: {
     handlePlayerCustomizationConfirmation() {
       axios
-        .post(`http://${import.meta.env.VITE_GAME_SERVER}/rooms`)
+        .post(`${RoomService.tls ? 'https' : 'http'}://${RoomService.gameServer}/rooms`)
         .then((response) => {
           this.$router.push({
             name: 'room',
