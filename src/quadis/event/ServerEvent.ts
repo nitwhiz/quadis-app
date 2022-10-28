@@ -16,8 +16,11 @@ export const EVENT_NEXT_PIECE_UPDATE = 'next_piece_update';
 export const EVENT_SCORE_UPDATE = 'score_update';
 export const EVENT_GAME_OVER = 'game_over';
 
+export const EVENT_WINDOW = 'window';
+
 export const EVENT_ORIGIN_ROOM = 'room';
 export const EVENT_ORIGIN_GAME = 'game';
+export const EVENT_ORIGIN_SYSTEM = 'system';
 
 export type EventType =
   | typeof EVENT_HELLO
@@ -32,11 +35,13 @@ export type EventType =
   | typeof EVENT_HOLDING_PIECE_UPDATE
   | typeof EVENT_NEXT_PIECE_UPDATE
   | typeof EVENT_SCORE_UPDATE
-  | typeof EVENT_GAME_OVER;
+  | typeof EVENT_GAME_OVER
+  | typeof EVENT_WINDOW;
 
 export type EventOriginType =
   | typeof EVENT_ORIGIN_ROOM
-  | typeof EVENT_ORIGIN_GAME;
+  | typeof EVENT_ORIGIN_GAME
+  | typeof EVENT_ORIGIN_SYSTEM;
 
 export interface EventOrigin<OriginType extends EventOriginType> {
   id: string;
@@ -55,6 +60,10 @@ export interface RoomEvent<PayloadType> extends BaseEvent<PayloadType> {
 
 export interface GameEvent<PayloadType> extends BaseEvent<PayloadType> {
   origin: EventOrigin<typeof EVENT_ORIGIN_GAME>;
+}
+
+export interface SystemEvent<PayloadType> extends BaseEvent<PayloadType> {
+  origin: EventOrigin<typeof EVENT_ORIGIN_SYSTEM>;
 }
 
 // payloads
@@ -109,6 +118,10 @@ export interface MessagePayload {
 export type StartPayload = null;
 
 export type GameOverPayload = null;
+
+export interface EventWindowPayload {
+  events: ServerEvent[];
+}
 
 // room events
 
@@ -168,6 +181,12 @@ export interface GameOverEvent extends GameEvent<GameOverPayload> {
   type: typeof EVENT_GAME_OVER;
 }
 
+// system event
+
+export interface EventWindowEvent extends SystemEvent<EventWindowPayload> {
+  type: typeof EVENT_WINDOW;
+}
+
 export type ServerEvent =
   | HelloEvent
   | HelloAckEvent
@@ -181,7 +200,8 @@ export type ServerEvent =
   | HoldingPieceUpdateEvent
   | NextPieceUpdateEvent
   | ScoreUpdateEvent
-  | GameOverEvent;
+  | GameOverEvent
+  | EventWindowEvent;
 
 export interface ServerEventTypes {
   [EVENT_HELLO]: HelloEvent;
@@ -197,4 +217,5 @@ export interface ServerEventTypes {
   [EVENT_NEXT_PIECE_UPDATE]: NextPieceUpdateEvent;
   [EVENT_SCORE_UPDATE]: ScoreUpdateEvent;
   [EVENT_GAME_OVER]: GameOverEvent;
+  [EVENT_WINDOW]: EventWindowEvent;
 }

@@ -13,6 +13,8 @@ import {
   EVENT_LEAVE,
   EVENT_ORIGIN_GAME,
   EVENT_ORIGIN_ROOM,
+  EVENT_ORIGIN_SYSTEM,
+  EVENT_WINDOW,
   ServerEvent,
   ServerEventTypes,
 } from '../event/ServerEvent';
@@ -126,6 +128,20 @@ export default class RoomService extends EventEmitter<
     });
   }
 
+  private handleEvent(event: ServerEvent) {
+    if (event.origin.type === EVENT_ORIGIN_GAME) {
+      this.emit(gameEventType(event.type, event.origin.id), event);
+    } else if (event.origin.type === EVENT_ORIGIN_ROOM) {
+      this.handleRoomEventMessage(event);
+    } else if (event.origin.type === EVENT_ORIGIN_SYSTEM) {
+      if (event.type === EVENT_WINDOW) {
+        for (const e of event.payload.events) {
+          this.handleEvent(e);
+        }
+      }
+    }
+  }
+
   public addMessageHandler(): void {
     this.socketConn?.addEventListener(
       'message',
@@ -153,11 +169,7 @@ export default class RoomService extends EventEmitter<
             }
           }
 
-          if (event.origin.type === EVENT_ORIGIN_GAME) {
-            this.emit(gameEventType(event.type, event.origin.id), event);
-          } else if (event.origin.type === EVENT_ORIGIN_ROOM) {
-            this.handleRoomEventMessage(event);
-          }
+          this.handleEvent(event);
         } catch (e) {
           console.error('unable to process message data', msgEvent, e);
         }
