@@ -1,40 +1,13 @@
-<template>
-  <div v-if="ready" class="main">
-    <router-view />
-  </div>
-</template>
-
-<script lang="ts">
-import { defineComponent } from 'vue';
-import GameHost from './quadis/game/GameHost';
-import { useEnvironment } from './composables/useEnvironment';
-import RoomService from './quadis/room/RoomService';
-
-export default defineComponent({
-  setup() {
-    const gameHost = GameHost.getInstance();
-
-    gameHost.injectApp();
-
-    return {
-      gameHost
-    }
-  },
-  data() {
-    return {
-      ready: false
-    };
-  },
-  mounted(): void {
-    useEnvironment().then((env) => {
-      RoomService.gameServer = env.gameServer.value;
-      RoomService.tls = env.tls.value;
-
-      this.ready = true;
-    })
-  }
-});
+<script setup lang="ts">
+import MainView from './views/MainView.vue';
 </script>
+
+<template>
+  <Suspense>
+    <MainView />
+    <template #fallback>Loading ...</template>
+  </Suspense>
+</template>
 
 <style lang="scss">
 @import url('https://fonts.googleapis.com/css2?family=Nunito&family=Press+Start+2P&display=swap');
