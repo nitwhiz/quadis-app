@@ -121,6 +121,7 @@ export default class RoomService extends EventEmitter<
       this.addHelloListener(playerName);
 
       this.inputHandler.on(EVENT_INPUT_COMMAND, (cmd: Command) => {
+        // todo: handle event locally, too
         this.sendPlayerCommand(cmd);
       });
 
@@ -129,6 +130,13 @@ export default class RoomService extends EventEmitter<
   }
 
   private handleEvent(event: ServerEvent) {
+    const now = Date.now();
+
+    const latencyPublish = now - event.publishedAt;
+    const latencySend = now - event.sentAt;
+
+    console.log(event.type, latencyPublish, latencySend);
+
     if (event.origin.type === EVENT_ORIGIN_GAME) {
       this.emit(gameEventType(event.type, event.origin.id), event);
     } else if (event.origin.type === EVENT_ORIGIN_ROOM) {

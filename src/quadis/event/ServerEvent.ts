@@ -52,6 +52,8 @@ interface BaseEvent<PayloadType> {
   type: EventType;
   origin: EventOrigin<EventOriginType>;
   payload: PayloadType;
+  publishedAt: number;
+  sentAt: number;
 }
 
 export interface RoomEvent<PayloadType> extends BaseEvent<PayloadType> {
