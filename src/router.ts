@@ -1,9 +1,9 @@
-import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
+import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router';
 import axios from 'axios';
 import RoomService from './quadis/room/RoomService';
 
 export default createRouter({
-  history: createWebHistory('/'),
+  history: createWebHashHistory('/'),
   routes: [
     {
       path: '/',
