@@ -9,9 +9,7 @@ const router = useRouter();
 
 const handlePlayerCustomizationConfirmation = () => {
   axios
-    .post(
-      `${RoomService.tls ? 'https' : 'http'}://${RoomService.gameServer}/rooms`,
-    )
+    .post(RoomService.getUrl('http', 'rooms'))
     .then((response) => {
       router.push({
         name: 'room',

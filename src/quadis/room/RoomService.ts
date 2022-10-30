@@ -110,8 +110,21 @@ export default class RoomService extends EventEmitter<
     });
   }
 
+  private addErrorListener(): void {
+    this.socketConn?.addEventListener('error', (err) => {
+      console.error('socket error', err);
+      this.socketConn?.close();
+    });
+  }
+
   private sendPlayerCommand(cmd: Command): void {
     this.socketConn?.send(cmd);
+  }
+
+  public static getUrl(protocol: string, path: string): string {
+    return `${protocol}${RoomService.tls ? 's' : ''}://${
+      RoomService.gameServer
+    }/${path}`;
   }
 
   public addOpenHandler(playerName: string): void {
@@ -187,12 +200,11 @@ export default class RoomService extends EventEmitter<
 
   public connect(playerName: string): void {
     this.socketConn = new WebSocket(
-      `${RoomService.tls ? 'wss' : 'ws'}://${RoomService.gameServer}/rooms/${
-        this.roomId
-      }/socket`,
+      RoomService.getUrl('ws', `rooms/${this.roomId}/socket`),
     );
 
     this.addCloseListener();
+    this.addErrorListener();
     this.addOpenHandler(playerName);
     this.addMessageHandler();
   }
@@ -222,11 +234,7 @@ export default class RoomService extends EventEmitter<
 
   public start(): Promise<boolean> {
     return axios
-      .post(
-        `${RoomService.tls ? 'https' : 'http'}://${
-          RoomService.gameServer
-        }/rooms/${this.roomId}/start`,
-      )
+      .post(RoomService.getUrl('http', `rooms/${this.roomId}/start`))
       .then(() => {
         return true;
       })

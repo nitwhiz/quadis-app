@@ -18,11 +18,7 @@ export default createRouter({
         const roomId = to.params.roomId;
 
         axios
-          .get(
-            `${RoomService.tls ? 'https' : 'http'}://${
-              RoomService.gameServer
-            }/rooms/${roomId}`,
-          )
+          .get(RoomService.getUrl('http', `rooms/${roomId}`))
           .then(() => next())
           .catch(() =>
             next({
