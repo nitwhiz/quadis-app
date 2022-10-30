@@ -20,7 +20,14 @@ export abstract class InputAdapter extends EventEmitter<InputAdapterEventType> {
 
   public abstract init(): void;
 
+  /**
+   * register is called when this adapter is to be used from now on
+   */
   public abstract register(): void;
 
+  /**
+   * unregister is called when this adapter is not to be used from now on;
+   * another adapter is most likely to take over
+   */
   public abstract unregister(): void;
 }

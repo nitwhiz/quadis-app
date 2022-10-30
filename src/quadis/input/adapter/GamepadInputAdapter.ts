@@ -2,101 +2,152 @@ import { InputAdapter } from './InputAdapter';
 import {
   CMD_DOWN,
   CMD_HARD_LOCK,
+  CMD_HOLD,
   CMD_LEFT,
   CMD_RIGHT,
   CMD_ROTATE,
+  Command,
 } from '../../command/Command';
 
-const STANDARD_BUTTON_BOTTOM_RIGHT_CLUSTER = 0;
-const STANDARD_BUTTON_RIGHT_RIGHT_CLUSTER = 1;
-const STANDARD_BUTTON_LEFT_RIGHT_CLUSTER = 2;
-const STANDARD_BUTTON_TOP_RIGHT_CLUSTER = 3;
-const STANDARD_BUTTON_TOP_LEFT_FRONT = 4;
-const STANDARD_BUTTON_TOP_RIGHT_FRONT = 5;
-const STANDARD_BUTTON_BOTTOM_LEFT_FRONT = 6;
-const STANDARD_BUTTON_BOTTOM_RIGHT_FRONT = 7;
-const STANDARD_BUTTON_LEFT_CENTER_CLUSTER = 8;
-const STANDARD_BUTTON_RIGHT_CENTER_CLUSTER = 9;
-const STANDARD_BUTTON_LEFT_STICK_PRESSED = 10;
-const STANDARD_BUTTON_RIGHT_STICK_PRESSED = 11;
-const STANDARD_BUTTON_TOP_LEFT_CLUSTER = 12;
-const STANDARD_BUTTON_BOTTOM_LEFT_CLUSTER = 13;
-const STANDARD_BUTTON_LEFT_LEFT_CLUSTER = 14;
-const STANDARD_BUTTON_RIGHT_LEFT_CLUSTER = 15;
-const STANDARD_BUTTON_CENTER_CENTER_CLUSTER = 16;
+const enum GamepadInputKey {
+  STANDARD_BUTTON_BOTTOM_RIGHT_CLUSTER = '0',
+  STANDARD_BUTTON_RIGHT_RIGHT_CLUSTER = '1',
+  STANDARD_BUTTON_LEFT_RIGHT_CLUSTER = '2',
+  STANDARD_BUTTON_TOP_RIGHT_CLUSTER = '3',
+  STANDARD_BUTTON_TOP_LEFT_FRONT = '4',
+  STANDARD_BUTTON_TOP_RIGHT_FRONT = '5',
+  STANDARD_BUTTON_BOTTOM_LEFT_FRONT = '6',
+  STANDARD_BUTTON_BOTTOM_RIGHT_FRONT = '7',
+  STANDARD_BUTTON_LEFT_CENTER_CLUSTER = '8',
+  STANDARD_BUTTON_RIGHT_CENTER_CLUSTER = '9',
+  STANDARD_BUTTON_LEFT_STICK_PRESSED = '10',
+  STANDARD_BUTTON_RIGHT_STICK_PRESSED = '11',
+  STANDARD_BUTTON_TOP_LEFT_CLUSTER = '12',
+  STANDARD_BUTTON_BOTTOM_LEFT_CLUSTER = '13',
+  STANDARD_BUTTON_LEFT_LEFT_CLUSTER = '14',
+  STANDARD_BUTTON_RIGHT_LEFT_CLUSTER = '15',
+  STANDARD_BUTTON_CENTER_CENTER_CLUSTER = '16',
+}
+
+const inputMapping: Partial<Record<GamepadInputKey, Command>> = {
+  [GamepadInputKey.STANDARD_BUTTON_LEFT_LEFT_CLUSTER]: CMD_LEFT,
+  [GamepadInputKey.STANDARD_BUTTON_RIGHT_LEFT_CLUSTER]: CMD_RIGHT,
+  [GamepadInputKey.STANDARD_BUTTON_BOTTOM_RIGHT_CLUSTER]: CMD_ROTATE,
+  [GamepadInputKey.STANDARD_BUTTON_BOTTOM_LEFT_CLUSTER]: CMD_DOWN,
+  [GamepadInputKey.STANDARD_BUTTON_TOP_RIGHT_CLUSTER]: CMD_HOLD,
+  [GamepadInputKey.STANDARD_BUTTON_RIGHT_RIGHT_CLUSTER]: CMD_HARD_LOCK,
+};
 
 export default class GamepadInputAdapter extends InputAdapter {
   private gamepadIndex = 0;
 
-  private sampleFrame = -1;
-
-  private sampleTimeout = -1;
-
   private isRegistered = false;
 
-  private lastButtonInput = Date.now();
+  private lastTriggers: Partial<Record<GamepadInputKey, number | null>> = {};
+
+  private nextInputCycle = -1;
+
+  private pumpKeys: GamepadInputKey[] = [
+    GamepadInputKey.STANDARD_BUTTON_RIGHT_RIGHT_CLUSTER,
+  ];
+
+  private pumpKeyLocks: Partial<Record<GamepadInputKey, boolean>> = {};
 
   public init(): void {
     window.addEventListener('gamepadconnected', (e) => {
       this.gamepadIndex = e.gamepad.index;
       this.requestUsage();
     });
-  }
 
-  private sampleCycle(): void {
-    this.sampleFrame = window.requestAnimationFrame(() => {
-      const now = Date.now();
+    window.addEventListener('gamepaddisconnected', (e) => {
+      if (e.gamepad.index === this.gamepadIndex) {
+        window.clearTimeout(this.nextInputCycle);
 
-      // todo: wonky AF - support is experimental for now
-      if (now - this.lastButtonInput > 100) {
-        const gamepad = navigator.getGamepads()[this.gamepadIndex];
-
-        // handle non-standard gamepad.mapping?
-
-        if (gamepad?.buttons[STANDARD_BUTTON_BOTTOM_LEFT_CLUSTER]?.pressed) {
-          this.requestCommand(CMD_DOWN);
-          this.lastButtonInput = now;
-        } else if (
-          gamepad?.buttons[STANDARD_BUTTON_LEFT_LEFT_CLUSTER]?.pressed
-        ) {
-          this.requestCommand(CMD_LEFT);
-          this.lastButtonInput = now;
-        } else if (
-          gamepad?.buttons[STANDARD_BUTTON_RIGHT_LEFT_CLUSTER]?.pressed
-        ) {
-          this.requestCommand(CMD_RIGHT);
-          this.lastButtonInput = now;
-        } else if (
-          gamepad?.buttons[STANDARD_BUTTON_BOTTOM_RIGHT_CLUSTER]?.pressed
-        ) {
-          this.requestCommand(CMD_HARD_LOCK);
-          this.lastButtonInput = now;
-        } else if (
-          gamepad?.buttons[STANDARD_BUTTON_RIGHT_RIGHT_CLUSTER]?.pressed
-        ) {
-          this.requestCommand(CMD_ROTATE);
-          this.lastButtonInput = now;
-        }
+        this.gamepadIndex = -1;
+        this.nextInputCycle = -1;
+        this.isRegistered = false;
       }
-
-      this.sampleCycle();
     });
+
+    this.lastTriggers = {
+      [GamepadInputKey.STANDARD_BUTTON_LEFT_LEFT_CLUSTER]: null,
+      [GamepadInputKey.STANDARD_BUTTON_RIGHT_LEFT_CLUSTER]: null,
+      [GamepadInputKey.STANDARD_BUTTON_BOTTOM_RIGHT_CLUSTER]: null,
+      [GamepadInputKey.STANDARD_BUTTON_BOTTOM_LEFT_CLUSTER]: null,
+      [GamepadInputKey.STANDARD_BUTTON_TOP_RIGHT_CLUSTER]: null,
+      [GamepadInputKey.STANDARD_BUTTON_RIGHT_RIGHT_CLUSTER]: null,
+    };
   }
 
-  public register(): void {
-    if (this.isRegistered) {
+  private updateKeyStates(): void {
+    const gamepad = navigator.getGamepads()[this.gamepadIndex];
+
+    if (!gamepad) {
       return;
     }
 
+    for (const k of Object.keys(this.lastTriggers) as GamepadInputKey[]) {
+      const gpButton = parseInt(k, 10);
+
+      if (!gamepad.buttons[gpButton].pressed) {
+        this.lastTriggers[k] = null;
+      } else if (this.lastTriggers[k] === null) {
+        this.triggerCommand(k);
+      }
+    }
+  }
+
+  private processKeyStates(): void {
+    const now = Date.now();
+
+    for (const k of Object.keys(this.lastTriggers) as GamepadInputKey[]) {
+      if (this.lastTriggers[k] !== null && this.lastTriggers[k] !== undefined) {
+        const isPumpKey = this.pumpKeys.includes(k);
+        const isLockedPumpKey = Boolean(this.pumpKeyLocks[k]);
+
+        if (isPumpKey && isLockedPumpKey) {
+          continue;
+        }
+
+        if (isPumpKey) {
+          this.pumpKeyLocks[k] = true;
+        }
+
+        if (now - (this.lastTriggers[k] || now) > 180) {
+          this.triggerCommand(k);
+        }
+      }
+    }
+  }
+
+  private inputCycle(): void {
+    this.nextInputCycle = window.setTimeout(() => {
+      this.updateKeyStates();
+      this.processKeyStates();
+
+      this.inputCycle();
+    }, 10);
+  }
+
+  private triggerCommand(k: GamepadInputKey) {
+    const cmd = inputMapping[k];
+
+    if (cmd) {
+      this.requestCommand(cmd);
+    }
+
+    this.lastTriggers[k] = Date.now();
+  }
+
+  public register(): void {
     this.isRegistered = true;
 
-    window.cancelAnimationFrame(this.sampleFrame);
-    window.clearTimeout(this.sampleTimeout);
-
-    this.sampleCycle();
+    if (this.nextInputCycle === -1) {
+      this.inputCycle();
+    }
   }
 
   public unregister(): void {
-    // do not stop gamepad
+    this.isRegistered = false;
   }
 }

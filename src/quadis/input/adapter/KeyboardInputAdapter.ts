@@ -9,7 +9,7 @@ import {
   Command,
 } from '../../command/Command';
 
-const enum InputKey {
+const enum KeyboardInputKey {
   ARROW_LEFT = 'ArrowLeft',
   ARROW_RIGHT = 'ArrowRight',
   ARROW_UP = 'ArrowUp',
@@ -18,26 +18,26 @@ const enum InputKey {
   SPACE = ' ',
 }
 
-const inputMapping: Record<InputKey, Command> = {
-  [InputKey.ARROW_LEFT]: CMD_LEFT,
-  [InputKey.ARROW_RIGHT]: CMD_RIGHT,
-  [InputKey.ARROW_UP]: CMD_ROTATE,
-  [InputKey.ARROW_DOWN]: CMD_DOWN,
-  [InputKey.SHIFT]: CMD_HOLD,
-  [InputKey.SPACE]: CMD_HARD_LOCK,
+const inputMapping: Partial<Record<KeyboardInputKey, Command>> = {
+  [KeyboardInputKey.ARROW_LEFT]: CMD_LEFT,
+  [KeyboardInputKey.ARROW_RIGHT]: CMD_RIGHT,
+  [KeyboardInputKey.ARROW_UP]: CMD_ROTATE,
+  [KeyboardInputKey.ARROW_DOWN]: CMD_DOWN,
+  [KeyboardInputKey.SHIFT]: CMD_HOLD,
+  [KeyboardInputKey.SPACE]: CMD_HARD_LOCK,
 };
 
 export default class KeyboardInputAdapter extends InputAdapter {
   private boundEventListenerDown = this.eventListenerDown.bind(this);
   private boundEventListenerUp = this.eventListenerUp.bind(this);
 
-  private lastTriggers!: Record<InputKey, number | null>;
+  private lastTriggers: Partial<Record<KeyboardInputKey, number | null>> = {};
 
   private nextInputCycle = -1;
 
-  private pumpKeys: InputKey[] = [InputKey.SPACE];
+  private pumpKeys: KeyboardInputKey[] = [KeyboardInputKey.SPACE];
 
-  private pumpKeyLocks: Partial<Record<InputKey, boolean>> = {};
+  private pumpKeyLocks: Partial<Record<KeyboardInputKey, boolean>> = {};
 
   public init(): void {
     document.addEventListener('keydown', () => {
@@ -45,22 +45,20 @@ export default class KeyboardInputAdapter extends InputAdapter {
     });
 
     this.lastTriggers = {
-      [InputKey.ARROW_LEFT]: null,
-      [InputKey.ARROW_RIGHT]: null,
-      [InputKey.ARROW_UP]: null,
-      [InputKey.ARROW_DOWN]: null,
-      [InputKey.SHIFT]: null,
-      [InputKey.SPACE]: null,
+      [KeyboardInputKey.ARROW_LEFT]: null,
+      [KeyboardInputKey.ARROW_RIGHT]: null,
+      [KeyboardInputKey.ARROW_UP]: null,
+      [KeyboardInputKey.ARROW_DOWN]: null,
+      [KeyboardInputKey.SHIFT]: null,
+      [KeyboardInputKey.SPACE]: null,
     };
-
-    this.inputCycle();
   }
 
   private inputCycle(): void {
     this.nextInputCycle = window.setTimeout(() => {
       const now = Date.now();
 
-      for (const k of Object.keys(this.lastTriggers) as InputKey[]) {
+      for (const k of Object.keys(this.lastTriggers) as KeyboardInputKey[]) {
         if (
           this.lastTriggers[k] !== null &&
           this.lastTriggers[k] !== undefined
@@ -86,23 +84,28 @@ export default class KeyboardInputAdapter extends InputAdapter {
     }, 10);
   }
 
-  private triggerCommand(k: InputKey) {
-    this.requestCommand(inputMapping[k]);
+  private triggerCommand(k: KeyboardInputKey) {
+    const cmd = inputMapping[k];
+
+    if (cmd) {
+      this.requestCommand(cmd);
+    }
+
     this.lastTriggers[k] = Date.now();
   }
 
   private eventListenerDown(event: KeyboardEvent): void {
-    if (this.lastTriggers[event.key as InputKey] === null) {
-      this.triggerCommand(event.key as InputKey);
+    if (this.lastTriggers[event.key as KeyboardInputKey] === null) {
+      this.triggerCommand(event.key as KeyboardInputKey);
     }
   }
 
   private eventListenerUp(event: KeyboardEvent): void {
-    if (this.lastTriggers[event.key as InputKey] !== undefined) {
-      this.lastTriggers[event.key as InputKey] = null;
+    if (this.lastTriggers[event.key as KeyboardInputKey] !== undefined) {
+      this.lastTriggers[event.key as KeyboardInputKey] = null;
 
-      if (this.pumpKeys.includes(event.key as InputKey)) {
-        delete this.pumpKeyLocks[event.key as InputKey];
+      if (this.pumpKeys.includes(event.key as KeyboardInputKey)) {
+        delete this.pumpKeyLocks[event.key as KeyboardInputKey];
       }
     }
   }
@@ -110,10 +113,13 @@ export default class KeyboardInputAdapter extends InputAdapter {
   public register(): void {
     document.addEventListener('keydown', this.boundEventListenerDown);
     document.addEventListener('keyup', this.boundEventListenerUp);
+
+    this.inputCycle();
   }
 
   public unregister(): void {
     window.clearTimeout(this.nextInputCycle);
+    this.nextInputCycle = -1;
 
     document.removeEventListener('keydown', this.boundEventListenerDown);
     document.removeEventListener('keyup', this.boundEventListenerUp);
