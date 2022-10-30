@@ -35,6 +35,10 @@ export default class KeyboardInputAdapter extends InputAdapter {
 
   private nextInputCycle = -1;
 
+  private pumpKeys: InputKey[] = [InputKey.SPACE];
+
+  private pumpKeyLocks: Partial<Record<InputKey, boolean>> = {};
+
   public init(): void {
     document.addEventListener('keydown', () => {
       this.requestUsage();
@@ -61,6 +65,17 @@ export default class KeyboardInputAdapter extends InputAdapter {
           this.lastTriggers[k] !== null &&
           this.lastTriggers[k] !== undefined
         ) {
+          const isPumpKey = this.pumpKeys.includes(k);
+          const isLockedPumpKey = Boolean(this.pumpKeyLocks[k]);
+
+          if (isPumpKey && isLockedPumpKey) {
+            continue;
+          }
+
+          if (isPumpKey) {
+            this.pumpKeyLocks[k] = true;
+          }
+
           if (now - (this.lastTriggers[k] || now) > 180) {
             this.triggerCommand(k);
           }
@@ -85,6 +100,10 @@ export default class KeyboardInputAdapter extends InputAdapter {
   private eventListenerUp(event: KeyboardEvent): void {
     if (this.lastTriggers[event.key as InputKey] !== undefined) {
       this.lastTriggers[event.key as InputKey] = null;
+
+      if (this.pumpKeys.includes(event.key as InputKey)) {
+        delete this.pumpKeyLocks[event.key as InputKey];
+      }
     }
   }
 
