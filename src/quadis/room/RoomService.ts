@@ -32,7 +32,7 @@ import {
 export default class RoomService extends EventEmitter<
   ServerEventTypes | ClientEventTypes | string
 > {
-  public static gameServer = 'localhost:7000';
+  public static gameServer = '';
 
   public static tls = false;
 

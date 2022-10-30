@@ -8,16 +8,14 @@ import { useRouter } from 'vue-router';
 const router = useRouter();
 
 const handlePlayerCustomizationConfirmation = () => {
-  axios
-    .post(RoomService.getUrl('http', 'rooms'))
-    .then((response) => {
-      router.push({
-        name: 'room',
-        params: {
-          roomId: response.data.roomId,
-        },
-      });
+  axios.post(RoomService.getUrl('http', 'rooms')).then((response) => {
+    router.push({
+      name: 'room',
+      params: {
+        roomId: response.data.roomId,
+      },
     });
+  });
 };
 </script>
 

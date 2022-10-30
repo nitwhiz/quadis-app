@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import PlayerCustomization from '../../components/PlayerCustomization.vue';
 import GameDisplay from '../../components/GameDisplay.vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import usePlayerCustomization from '../../composables/usePlayerCustomization';
 import Player from '../../quadis/player/Player';
 import { computed, onMounted, ref } from 'vue';
@@ -19,11 +19,18 @@ import {
   EVENT_SCORE_UPDATE,
   ScoreUpdateEvent,
 } from '../../quadis/event/ServerEvent';
+import axios from 'axios';
 
 const { params } = useRoute();
-const { playerName, isConfirmed } = usePlayerCustomization();
+const router = useRouter();
 
 const roomId = params.roomId as string;
+
+await axios.get(RoomService.getUrl('http', `rooms/${roomId}`)).catch(() => {
+  router.push({ name: 'home' });
+});
+
+const { playerName, isConfirmed } = usePlayerCustomization();
 
 const error = ref(null as 'room_has_running_games' | null);
 const mainPlayer = ref(null as Player | null);
@@ -116,12 +123,7 @@ onMounted(() => {
           class="game current-game"
         >
           <GameDisplay :is-main="true" :player="mainPlayer" />
-          <button
-            v-if="mainPlayer.isHost"
-            ref="start"
-            class="start"
-            @click="start"
-          >
+          <button v-if="mainPlayer.isHost" class="start" @click="start">
             START
           </button>
         </div>

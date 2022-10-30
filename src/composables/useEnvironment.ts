@@ -1,8 +1,7 @@
-import { ref } from 'vue';
 import axios from 'axios';
 
-const gameServer = ref('');
-const tls = ref(false);
+let gameServer = '';
+let tls = false;
 
 const envRequest = axios
   .get<{
@@ -10,8 +9,8 @@ const envRequest = axios
     tls: boolean;
   }>('/env.json')
   .then((response) => {
-    gameServer.value = response.data.gameServer;
-    tls.value = response.data.tls;
+    gameServer = response.data.gameServer;
+    tls = response.data.tls;
   });
 
 export const useEnvironment = () => {
