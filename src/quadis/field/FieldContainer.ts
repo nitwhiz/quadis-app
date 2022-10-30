@@ -2,7 +2,7 @@ import DOMLinkedContainer from '../common/DOMLinkedContainer';
 import { PieceContainer } from '../piece/PieceContainer';
 import { Graphics } from 'pixi.js';
 import ColorMap from '../piece/color/ColorMap';
-import { Piece } from '../piece/Piece';
+import { getPieceDataXY, Piece } from '../piece/Piece';
 
 export default class FieldContainer extends DOMLinkedContainer {
   public static DEFAULT_FIELD_HEIGHT = 20;
@@ -49,6 +49,39 @@ export default class FieldContainer extends DOMLinkedContainer {
     );
 
     this.update(true);
+  }
+
+  public tryTranslatePiece(dr: number, dx: number, dy: number): void {
+    const destR = this.fallingPieceContainer.rotation + dr;
+
+    const destX = this.fallingPieceContainer.position.x + dx * this.blockSize;
+    const destY = this.fallingPieceContainer.position.y + dy * this.blockSize;
+
+    const piece = this.fallingPieceContainer.piece;
+
+    if (
+      piece === null ||
+      destX < 0 ||
+      destX > this.fieldWidth - 1 ||
+      destY < 0 ||
+      destY > this.fieldHeight - 1
+    ) {
+      return;
+    }
+
+    for (let x = 0; x < 4; ++x) {
+      for (let y = 0; y < 4; ++y) {
+        if (
+          getPieceDataXY(piece, destR, x, y) !== 0 &&
+          this.fieldData[destX + destY * this.fieldWidth] !== 0
+        ) {
+          return;
+        }
+      }
+    }
+
+    this.fallingPieceContainer.rotation = destR;
+    this.fallingPieceContainer.position.set(destX, destY);
   }
 
   public updateFallingPiece(

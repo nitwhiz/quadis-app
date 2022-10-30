@@ -21,6 +21,7 @@ import {
 import {
   ClientEventTypes,
   EVENT_ADD_PLAYER,
+  EVENT_PLAYER_COMMAND,
   EVENT_READY,
   EVENT_REMOVE_PLAYER,
   EVENT_ROOM_HAS_GAMES_RUNNING,
@@ -117,6 +118,20 @@ export default class RoomService extends EventEmitter<
     });
   }
 
+  private handlePlayerCommand(cmd: Command): void {
+    this.sendPlayerCommand(cmd);
+    this.runPlayerCommandLocally(cmd);
+  }
+
+  private runPlayerCommandLocally(cmd: Command): void {
+    if (this.mainPlayer) {
+      this.emit(
+        gameEventType(EVENT_PLAYER_COMMAND, this.mainPlayer.gameId),
+        cmd,
+      );
+    }
+  }
+
   private sendPlayerCommand(cmd: Command): void {
     this.socketConn?.send(cmd);
   }
@@ -134,8 +149,7 @@ export default class RoomService extends EventEmitter<
       this.addHelloListener(playerName);
 
       this.inputHandler.on(EVENT_INPUT_COMMAND, (cmd: Command) => {
-        // todo: handle event locally, too
-        this.sendPlayerCommand(cmd);
+        this.handlePlayerCommand(cmd);
       });
 
       //this.addKeyboardHandler();

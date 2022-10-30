@@ -14,7 +14,7 @@ export class PieceContainer extends Container {
 
   private readonly pieceFaceGraphics: Record<Piece, Graphics[]>;
 
-  private faceContainer: Container;
+  private readonly faceContainer: Container;
 
   constructor(blockSize: number) {
     super();
@@ -78,6 +78,10 @@ export class PieceContainer extends Container {
     return result;
   }
 
+  public get piece(): Piece | null {
+    return this.currentPiece;
+  }
+
   public set piece(piece: Piece | null) {
     if (this.currentPiece === piece) {
       return;
@@ -97,6 +101,10 @@ export class PieceContainer extends Container {
     this.rotation = 0;
   }
 
+  public get rotation(): number {
+    return this.currentRotation;
+  }
+
   public set rotation(angle: number) {
     if (this.currentPiece !== null) {
       const currentPieceGraphics =
@@ -107,6 +115,7 @@ export class PieceContainer extends Container {
       }
 
       const clampedRotation = clampRotation(this.currentPiece, angle);
+
       const nextPieceGraphics =
         this.pieceFaceGraphics[this.currentPiece][clampedRotation];
 

@@ -2,7 +2,7 @@ import Player from '../player/Player';
 import SidePieceContainer from '../piece/SidePieceContainer';
 import RoomService from '../room/RoomService';
 import { Container, IDestroyOptions, Ticker, UPDATE_PRIORITY } from 'pixi.js';
-import { gameEventType } from '../event/ClientEvent';
+import { EVENT_PLAYER_COMMAND, gameEventType } from '../event/ClientEvent';
 import {
   EVENT_FALLING_PIECE_UPDATE,
   EVENT_FIELD_UPDATE,
@@ -22,6 +22,13 @@ import {
   BLOCK_SIZE_OPPONENT_FIELD,
 } from '../piece/Piece';
 import FieldContainer from '../field/FieldContainer';
+import {
+  CMD_DOWN,
+  CMD_LEFT,
+  CMD_RIGHT,
+  CMD_ROTATE,
+  Command,
+} from '../command/Command';
 
 interface GameDOMLinks {
   gameContainer: HTMLElement;
@@ -151,6 +158,28 @@ export default class GameContainer extends Container {
     );
 
     this.roomService.on(EVENT_START, () => this.reset());
+
+    this.roomService.on(
+      this.getEventType(EVENT_PLAYER_COMMAND),
+      (cmd: Command) => {
+        switch (cmd) {
+          case CMD_ROTATE:
+            this.fieldContainer.tryTranslatePiece(1, 0, 0);
+            break;
+          case CMD_LEFT:
+            this.fieldContainer.tryTranslatePiece(0, -1, 0);
+            break;
+          case CMD_RIGHT:
+            this.fieldContainer.tryTranslatePiece(0, 1, 0);
+            break;
+          case CMD_DOWN:
+            this.fieldContainer.tryTranslatePiece(0, 0, 1);
+            break;
+          default:
+            break;
+        }
+      },
+    );
   }
 
   public reset(): void {
