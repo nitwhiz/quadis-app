@@ -45,4 +45,12 @@ export default class GameHost {
       this.isInjected = true;
     }
   }
+
+  public show(): void {
+    this.app.stage.visible = true;
+  }
+
+  public hide(): void {
+    this.app.stage.visible = false;
+  }
 }

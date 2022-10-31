@@ -7,30 +7,16 @@ import InputHandler, { EVENT_INPUT_COMMAND } from '../input/InputHandler';
 import KeyboardInputAdapter from '../input/adapter/KeyboardInputAdapter';
 import GamepadInputAdapter from '../input/adapter/GamepadInputAdapter';
 import {
-  EVENT_HELLO,
-  EVENT_HELLO_ACK,
-  EVENT_JOIN,
-  EVENT_LEAVE,
-  EVENT_ORIGIN_GAME,
-  EVENT_ORIGIN_ROOM,
-  EVENT_ORIGIN_SYSTEM,
-  EVENT_WINDOW,
   ServerEvent,
-  ServerEventTypes,
+  ServerEventMap,
+  ServerEventOrigin,
+  ServerEventType,
 } from '../event/ServerEvent';
-import {
-  ClientEventTypes,
-  EVENT_ADD_PLAYER,
-  EVENT_PLAYER_COMMAND,
-  EVENT_READY,
-  EVENT_REMOVE_PLAYER,
-  EVENT_ROOM_HAS_GAMES_RUNNING,
-  EVENT_UPDATE_MAIN_PLAYER,
-  gameEventType,
-} from '../event/ClientEvent';
+import { ClientEventMap, ClientEventType } from '../event/ClientEvent';
+import { GameEventType, gameEventType } from '../event/GameEvent';
 
 export default class RoomService extends EventEmitter<
-  ServerEventTypes | ClientEventTypes | string
+  ServerEventMap | ClientEventMap | GameEventType
 > {
   private readonly gameServer: string;
 
@@ -71,14 +57,14 @@ export default class RoomService extends EventEmitter<
       try {
         const event = JSON.parse(msgEvent.data) as ServerEvent;
 
-        if (event.type === EVENT_HELLO) {
+        if (event.type === ServerEventType.HELLO) {
           this.socketConn?.send(
             JSON.stringify({
               playerName: playerName.toUpperCase(),
             }),
           );
 
-          this.emit(EVENT_READY);
+          this.emit(ClientEventType.READY);
 
           this.socketConn?.removeEventListener('message', helloListener);
         }
@@ -95,7 +81,7 @@ export default class RoomService extends EventEmitter<
       console.log('socket closed');
 
       if (e.reason === 'room_has_games_running') {
-        this.emit(EVENT_ROOM_HAS_GAMES_RUNNING);
+        this.emit(ClientEventType.ROOM_HAS_GAMES_RUNNING);
       }
     });
   }
@@ -115,7 +101,7 @@ export default class RoomService extends EventEmitter<
   private runPlayerCommandLocally(cmd: Command): void {
     if (this.mainPlayer) {
       this.emit(
-        gameEventType(EVENT_PLAYER_COMMAND, this.mainPlayer.gameId),
+        gameEventType(ClientEventType.PLAYER_COMMAND, this.mainPlayer.gameId),
         cmd,
       );
     }
@@ -143,7 +129,7 @@ export default class RoomService extends EventEmitter<
     });
   }
 
-  private handleEvent(event: ServerEvent) {
+  private handleServerEvent(event: ServerEvent) {
     const now = Date.now();
 
     const latencyPublish = now - event.publishedAt;
@@ -151,14 +137,14 @@ export default class RoomService extends EventEmitter<
 
     console.log(event.type, latencyPublish, latencySend);
 
-    if (event.origin.type === EVENT_ORIGIN_GAME) {
+    if (event.origin.type === ServerEventOrigin.GAME) {
       this.emit(gameEventType(event.type, event.origin.id), event);
-    } else if (event.origin.type === EVENT_ORIGIN_ROOM) {
-      this.handleRoomEventMessage(event);
-    } else if (event.origin.type === EVENT_ORIGIN_SYSTEM) {
-      if (event.type === EVENT_WINDOW) {
+    } else if (event.origin.type === ServerEventOrigin.ROOM) {
+      this.handleRoomEvent(event);
+    } else if (event.origin.type === ServerEventOrigin.SYSTEM) {
+      if (event.type === ServerEventType.WINDOW) {
         for (const e of event.payload.events) {
-          this.handleEvent(e);
+          this.handleServerEvent(e);
         }
       }
     }
@@ -171,7 +157,7 @@ export default class RoomService extends EventEmitter<
         try {
           const event = JSON.parse(msgEvent.data) as ServerEvent;
 
-          if (event.type === EVENT_HELLO_ACK) {
+          if (event.type === ServerEventType.HELLO_ACK) {
             this.mainPlayer = new Player(
               true,
               event.payload.controlledGame.id,
@@ -179,19 +165,19 @@ export default class RoomService extends EventEmitter<
               event.payload.host,
             );
 
-            this.emit(EVENT_UPDATE_MAIN_PLAYER, this.mainPlayer);
+            this.emit(ClientEventType.UPDATE_MAIN_PLAYER, this.mainPlayer);
 
             for (const g of event.payload.room.games) {
               if (g.id !== this.mainPlayer.gameId) {
                 this.emit(
-                  EVENT_ADD_PLAYER,
+                  ClientEventType.ADD_PLAYER,
                   new Player(false, g.id, g.playerName),
                 );
               }
             }
           }
 
-          this.handleEvent(event);
+          this.handleServerEvent(event);
         } catch (e) {
           console.error('unable to process message data', msgEvent, e);
         }
@@ -214,21 +200,21 @@ export default class RoomService extends EventEmitter<
     this.addMessageHandler();
   }
 
-  private handleRoomEventMessage(event: ServerEvent): void {
+  private handleRoomEvent(event: ServerEvent): void {
     switch (event.type) {
-      case EVENT_JOIN:
+      case ServerEventType.JOIN:
         {
           if (this.mainPlayer?.gameId !== event.payload.id) {
             this.emit(
-              EVENT_ADD_PLAYER,
+              ClientEventType.ADD_PLAYER,
               new Player(false, event.payload.id, event.payload.playerName),
             );
           }
         }
         break;
-      case EVENT_LEAVE:
+      case ServerEventType.LEAVE:
         {
-          this.emit(EVENT_REMOVE_PLAYER, event.payload.id);
+          this.emit(ClientEventType.REMOVE_PLAYER, event.payload.id);
         }
         break;
       default:

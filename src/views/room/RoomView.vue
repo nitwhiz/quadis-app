@@ -1,24 +1,21 @@
 <script setup lang="ts">
 import PlayerCustomization from '../../components/PlayerCustomization.vue';
 import GameDisplay from '../../components/GameDisplay.vue';
+import ScoresDisplay from '../../components/ScoresDisplay.vue';
 import { useRoute, useRouter } from 'vue-router';
 import usePlayerCustomization from '../../composables/usePlayerCustomization';
 import Player from '../../quadis/player/Player';
 import { computed, onMounted, ref } from 'vue';
 import {
-  EVENT_ADD_PLAYER,
-  EVENT_READY,
-  EVENT_REMOVE_PLAYER,
-  EVENT_ROOM_HAS_GAMES_RUNNING,
-  EVENT_UPDATE_MAIN_PLAYER,
-} from '../../quadis/event/ClientEvent';
-import {
   BedrockTargetsUpdateEvent,
-  EVENT_BEDROCK_TARGETS_UPDATE,
-  EVENT_SCORE_UPDATE,
+  RoomScoresEvent,
   ScoreUpdateEvent,
+  ServerEventType,
 } from '../../quadis/event/ServerEvent';
 import { useRoomService } from '../../composables/useRoomService';
+import { ClientEventType } from '../../quadis/event/ClientEvent';
+import Score from '../../quadis/score/Score';
+import { useGameHost } from '../../composables/useGameHost';
 
 const { params } = useRoute();
 const router = useRouter();
@@ -32,12 +29,18 @@ if (!roomAvailable) {
   router.push({ name: 'home' });
 }
 
+const gameHost = useGameHost();
+
 const { playerName, isConfirmed } = usePlayerCustomization();
 
 const error = ref(null as 'room_has_running_games' | null);
 const mainPlayer = ref(null as Player | null);
 const opponents = ref([] as Player[]);
 const currentBedrockTargetId = ref(null as string | null);
+const scores = ref(
+  [] as { gameId: string; playerName: string; score: Score }[],
+);
+const showScores = ref(false);
 
 const errorMessage = computed(() => {
   switch (error.value) {
@@ -55,28 +58,28 @@ const start = () => {
 const handlePlayerCustomizationConfirmation = () => {
   error.value = null;
 
-  roomService.on(EVENT_READY, () => {
+  roomService.on(ClientEventType.READY, () => {
     isConfirmed.value = true;
   });
 
-  roomService.on(EVENT_ADD_PLAYER, (player: Player) => {
+  roomService.on(ClientEventType.ADD_PLAYER, (player: Player) => {
     opponents.value.push(player);
   });
 
-  roomService.on(EVENT_REMOVE_PLAYER, (playerId: string) => {
+  roomService.on(ClientEventType.REMOVE_PLAYER, (playerId: string) => {
     opponents.value = opponents.value.filter((p) => p.gameId !== playerId);
   });
 
-  roomService.on(EVENT_UPDATE_MAIN_PLAYER, (player: Player) => {
+  roomService.on(ClientEventType.UPDATE_MAIN_PLAYER, (player: Player) => {
     mainPlayer.value = player;
   });
 
-  roomService.on(EVENT_ROOM_HAS_GAMES_RUNNING, () => {
+  roomService.on(ClientEventType.ROOM_HAS_GAMES_RUNNING, () => {
     error.value = 'room_has_running_games';
   });
 
   roomService.on(
-    EVENT_BEDROCK_TARGETS_UPDATE,
+    ServerEventType.BEDROCK_TARGETS_UPDATE,
     (event: BedrockTargetsUpdateEvent) => {
       if (mainPlayer.value && event.payload.targets[mainPlayer.value.gameId]) {
         currentBedrockTargetId.value =
@@ -87,14 +90,35 @@ const handlePlayerCustomizationConfirmation = () => {
     },
   );
 
-  roomService.on(EVENT_SCORE_UPDATE, (event: ScoreUpdateEvent) => {
+  // todo: scores should be kept in `Game`s
+  roomService.on(ServerEventType.SCORE_UPDATE, (event: ScoreUpdateEvent) => {
     if (event.origin.id === mainPlayer.value?.gameId) {
       mainPlayer.value.score.score = event.payload.score;
       mainPlayer.value.score.lines = event.payload.lines;
     }
   });
 
+  roomService.on(ServerEventType.ROOM_SCORES, (event: RoomScoresEvent) => {
+    scores.value = [];
+
+    for (const scoreData of event.payload) {
+      scores.value.push({
+        gameId: scoreData.game.id,
+        playerName: scoreData.game.playerName,
+        score: scoreData.score,
+      });
+    }
+
+    gameHost.hide();
+    showScores.value = true;
+  });
+
   roomService.connect(playerName.value);
+};
+
+const hideScores = () => {
+  showScores.value = false;
+  gameHost.show();
 };
 
 onMounted(() => {
@@ -139,6 +163,9 @@ onMounted(() => {
       </div>
     </div>
   </div>
+  <template v-if="showScores">
+    <ScoresDisplay :scores="scores" @close="hideScores" />
+  </template>
 </template>
 
 <style lang="scss" scoped>

@@ -1,20 +1,14 @@
 import Player from '../player/Player';
 import SidePieceContainer from '../piece/SidePieceContainer';
 import RoomService from '../room/RoomService';
-import { EVENT_PLAYER_COMMAND, gameEventType } from '../event/ClientEvent';
+import { ClientEventType } from '../event/ClientEvent';
 import {
-  EVENT_FALLING_PIECE_UPDATE,
-  EVENT_FIELD_UPDATE,
-  EVENT_GAME_OVER,
-  EVENT_HOLDING_PIECE_UPDATE,
-  EVENT_NEXT_PIECE_UPDATE,
-  EVENT_SCORE_UPDATE,
-  EVENT_START,
   FallingPieceUpdateEvent,
   FieldUpdateEvent,
   HoldingPieceUpdateEvent,
   NextPieceUpdateEvent,
   ScoreUpdateEvent,
+  ServerEventType,
 } from '../event/ServerEvent';
 import {
   BLOCK_SIZE_MAIN_FIELD,
@@ -24,6 +18,7 @@ import FieldContainer from '../field/FieldContainer';
 import { Command } from '../command/Command';
 import { Container, IDestroyOptions } from '@pixi/display';
 import { Ticker, UPDATE_PRIORITY } from '@pixi/ticker';
+import { gameEventType } from '../event/GameEvent';
 
 interface GameDOMLinks {
   gameContainer: HTMLElement;
@@ -106,13 +101,13 @@ export default class GameContainer extends Container {
     this.ticker.start();
   }
 
-  private getEventType(type: string): string {
+  private getOwnEventType(type: ServerEventType | ClientEventType) {
     return gameEventType(type, this.getId());
   }
 
   private initListeners() {
     this.roomService.on(
-      this.getEventType(EVENT_SCORE_UPDATE),
+      this.getOwnEventType(ServerEventType.SCORE_UPDATE),
       (event: ScoreUpdateEvent) => {
         this.player.score.score = event.payload.score;
         this.player.score.lines = event.payload.lines;
@@ -120,7 +115,7 @@ export default class GameContainer extends Container {
     );
 
     this.roomService.on(
-      this.getEventType(EVENT_NEXT_PIECE_UPDATE),
+      this.getOwnEventType(ServerEventType.NEXT_PIECE_UPDATE),
       (event: NextPieceUpdateEvent) => {
         if (this.nextPieceContainer) {
           this.nextPieceContainer.setPiece(event.payload.token);
@@ -129,7 +124,7 @@ export default class GameContainer extends Container {
     );
 
     this.roomService.on(
-      this.getEventType(EVENT_HOLDING_PIECE_UPDATE),
+      this.getOwnEventType(ServerEventType.HOLDING_PIECE_UPDATE),
       (event: HoldingPieceUpdateEvent) => {
         if (this.holdingPieceContainer) {
           this.holdingPieceContainer.setPiece(event.payload.token);
@@ -138,14 +133,14 @@ export default class GameContainer extends Container {
     );
 
     this.roomService.on(
-      this.getEventType(EVENT_FIELD_UPDATE),
+      this.getOwnEventType(ServerEventType.FIELD_UPDATE),
       (event: FieldUpdateEvent) => {
         this.fieldContainer.updateField(10, 20, event.payload.data);
       },
     );
 
     this.roomService.on(
-      this.getEventType(EVENT_FALLING_PIECE_UPDATE),
+      this.getOwnEventType(ServerEventType.FALLING_PIECE_UPDATE),
       (event: FallingPieceUpdateEvent) => {
         const prediction = this.fallingPiecePredictionBuffer.shift();
 
@@ -173,14 +168,14 @@ export default class GameContainer extends Container {
       },
     );
 
-    this.roomService.on(this.getEventType(EVENT_GAME_OVER), () =>
+    this.roomService.on(this.getOwnEventType(ServerEventType.GAME_OVER), () =>
       this.handleGameOver(),
     );
 
-    this.roomService.on(EVENT_START, () => this.reset());
+    this.roomService.on(ServerEventType.START, () => this.reset());
 
     this.roomService.on(
-      this.getEventType(EVENT_PLAYER_COMMAND),
+      this.getOwnEventType(ClientEventType.PLAYER_COMMAND),
       (cmd: Command) => {
         let fallingPiecePredictionResult = false;
 
