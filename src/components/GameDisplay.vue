@@ -1,11 +1,8 @@
 <template>
   <div
-      :data-player-id="player.gameId"
-      class="game-display"
-      :class="[
-          isMain ? 'main' : undefined,
-          isTarget ? 'is-target' : undefined
-      ]"
+    :data-player-id="player.gameId"
+    class="game-display"
+    :class="[isMain ? 'main' : undefined, isTarget ? 'is-target' : undefined]"
   >
     <div class="game-wrapper">
       <div class="player">{{ player.name }}</div>
@@ -41,8 +38,8 @@ export default defineComponent({
     },
     isTarget: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   setup(props) {
     const score = ref(props.player.score);
@@ -50,22 +47,28 @@ export default defineComponent({
 
     return {
       score,
-      gameHost
+      gameHost,
     };
   },
   data() {
     return {
-      game: null as GameContainer | null
-    }
+      game: null as GameContainer | null,
+    };
   },
   mounted() {
     console.log('mount.');
 
-    const game = new GameContainer(this.player, {
-      gameContainer: this.$refs.game as HTMLDivElement,
-      nextPieceContainer: this.$refs.nextPiece as HTMLDivElement | undefined,
-      holdingPieceContainer: this.$refs.holdingPiece as HTMLDivElement | undefined
-    }, RoomService.getInstance());
+    const game = new GameContainer(
+      this.player,
+      {
+        gameContainer: this.$refs.game as HTMLDivElement,
+        nextPieceContainer: this.$refs.nextPiece as HTMLDivElement | undefined,
+        holdingPieceContainer: this.$refs.holdingPiece as
+          | HTMLDivElement
+          | undefined,
+      },
+      RoomService.getInstance(),
+    );
 
     this.gameHost.addGame(game);
 
@@ -74,7 +77,7 @@ export default defineComponent({
   unmounted() {
     console.log('unmount.');
 
-    this.gameHost.removeGame(this.game?.getId() || 'dead-beef');
+    this.gameHost.removeGame(this.game?.getId() ?? 'dead-beef');
   },
 });
 </script>
@@ -91,7 +94,7 @@ export default defineComponent({
   border-radius: 3px;
 
   &.is-target {
-    border-color: rgba(255, 0, 0, .5);
+    border-color: rgba(255, 0, 0, 0.5);
   }
 
   .meta {

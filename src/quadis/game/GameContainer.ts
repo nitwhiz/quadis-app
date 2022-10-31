@@ -22,13 +22,7 @@ import {
   BLOCK_SIZE_OPPONENT_FIELD,
 } from '../piece/Piece';
 import FieldContainer from '../field/FieldContainer';
-import {
-  CMD_DOWN,
-  CMD_LEFT,
-  CMD_RIGHT,
-  CMD_ROTATE,
-  Command,
-} from '../command/Command';
+import { Command } from '../command/Command';
 
 interface GameDOMLinks {
   gameContainer: HTMLElement;
@@ -163,16 +157,16 @@ export default class GameContainer extends Container {
       this.getEventType(EVENT_PLAYER_COMMAND),
       (cmd: Command) => {
         switch (cmd) {
-          case CMD_ROTATE:
+          case Command.ROTATE:
             this.fieldContainer.tryTranslatePiece(1, 0, 0);
             break;
-          case CMD_LEFT:
+          case Command.LEFT:
             this.fieldContainer.tryTranslatePiece(0, -1, 0);
             break;
-          case CMD_RIGHT:
+          case Command.RIGHT:
             this.fieldContainer.tryTranslatePiece(0, 1, 0);
             break;
-          case CMD_DOWN:
+          case Command.DOWN:
             this.fieldContainer.tryTranslatePiece(0, 0, 1);
             break;
           default:

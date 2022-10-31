@@ -2,6 +2,7 @@ import {
   EVENT_INPUT_ADAPTER_INPUT,
   EVENT_INPUT_ADAPTER_REQUEST,
   InputAdapter,
+  KeyType,
 } from './adapter/InputAdapter';
 import { Command } from '../command/Command';
 import EventEmitter from 'eventemitter3';
@@ -11,14 +12,14 @@ export const EVENT_INPUT_COMMAND = 'input_handler_input';
 export default class InputHandler extends EventEmitter<
   typeof EVENT_INPUT_COMMAND
 > {
-  private readonly availableAdapters: InputAdapter[];
+  private readonly availableAdapters: InputAdapter<KeyType>[];
 
-  private adapter: InputAdapter | null;
+  private adapter: InputAdapter<KeyType> | null;
 
   private boundAdapterInputEventHandler =
     this.handleAdapterInputEvent.bind(this);
 
-  constructor(availableAdapters: InputAdapter[]) {
+  constructor(availableAdapters: InputAdapter<KeyType>[]) {
     super();
 
     this.availableAdapters = availableAdapters;
@@ -35,7 +36,7 @@ export default class InputHandler extends EventEmitter<
 
   private initAdapters(): void {
     for (const adapter of this.availableAdapters) {
-      ((a: InputAdapter) => {
+      ((a: InputAdapter<KeyType>) => {
         a.on(EVENT_INPUT_ADAPTER_REQUEST, () => {
           this.requestAdapter(a);
         });
@@ -45,7 +46,7 @@ export default class InputHandler extends EventEmitter<
     }
   }
 
-  private requestAdapter(adapter: InputAdapter): void {
+  private requestAdapter(adapter: InputAdapter<KeyType>): void {
     if (this.adapter === adapter) {
       return;
     }

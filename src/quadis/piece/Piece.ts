@@ -73,7 +73,7 @@ export const PieceDataTable: Record<Piece, Uint8Array[] | null> = {
 };
 
 export const getFaceCount = (piece: Piece): number => {
-  return (PieceDataTable[piece] || []).length;
+  return (PieceDataTable[piece] ?? []).length;
 };
 
 export const clampRotation = (piece: Piece, rot: number): number => {

@@ -1,13 +1,5 @@
 import { InputAdapter } from './InputAdapter';
-import {
-  CMD_DOWN,
-  CMD_HARD_LOCK,
-  CMD_HOLD,
-  CMD_LEFT,
-  CMD_RIGHT,
-  CMD_ROTATE,
-  Command,
-} from '../../command/Command';
+import { Command } from '../../command/Command';
 
 const enum GamepadInputKey {
   STANDARD_BUTTON_BOTTOM_RIGHT_CLUSTER = '0',
@@ -29,125 +21,66 @@ const enum GamepadInputKey {
   STANDARD_BUTTON_CENTER_CENTER_CLUSTER = '16',
 }
 
-const inputMapping: Partial<Record<GamepadInputKey, Command>> = {
-  [GamepadInputKey.STANDARD_BUTTON_LEFT_LEFT_CLUSTER]: CMD_LEFT,
-  [GamepadInputKey.STANDARD_BUTTON_RIGHT_LEFT_CLUSTER]: CMD_RIGHT,
-  [GamepadInputKey.STANDARD_BUTTON_BOTTOM_RIGHT_CLUSTER]: CMD_ROTATE,
-  [GamepadInputKey.STANDARD_BUTTON_BOTTOM_LEFT_CLUSTER]: CMD_DOWN,
-  [GamepadInputKey.STANDARD_BUTTON_TOP_RIGHT_CLUSTER]: CMD_HOLD,
-  [GamepadInputKey.STANDARD_BUTTON_RIGHT_RIGHT_CLUSTER]: CMD_HARD_LOCK,
-};
-
-export default class GamepadInputAdapter extends InputAdapter {
+export default class GamepadInputAdapter extends InputAdapter<GamepadInputKey> {
   private gamepadIndex = 0;
 
-  private isRegistered = false;
-
-  private lastTriggers: Partial<Record<GamepadInputKey, number | null>> = {};
-
-  private nextInputCycle = -1;
-
-  private pumpKeys: GamepadInputKey[] = [
-    GamepadInputKey.STANDARD_BUTTON_RIGHT_RIGHT_CLUSTER,
-  ];
-
-  private pumpKeyLocks: Partial<Record<GamepadInputKey, boolean>> = {};
+  private lastTimestamp = -1;
 
   public init(): void {
     window.addEventListener('gamepadconnected', (e) => {
+      if (this.gamepadIndex !== -1 && this.gamepadIndex !== e.gamepad.index) {
+        this.stop();
+      }
+
       this.gamepadIndex = e.gamepad.index;
       this.requestUsage();
     });
 
     window.addEventListener('gamepaddisconnected', (e) => {
       if (e.gamepad.index === this.gamepadIndex) {
-        window.clearTimeout(this.nextInputCycle);
+        this.stop();
 
         this.gamepadIndex = -1;
-        this.nextInputCycle = -1;
-        this.isRegistered = false;
       }
     });
 
-    this.lastTriggers = {
-      [GamepadInputKey.STANDARD_BUTTON_LEFT_LEFT_CLUSTER]: null,
-      [GamepadInputKey.STANDARD_BUTTON_RIGHT_LEFT_CLUSTER]: null,
-      [GamepadInputKey.STANDARD_BUTTON_BOTTOM_RIGHT_CLUSTER]: null,
-      [GamepadInputKey.STANDARD_BUTTON_BOTTOM_LEFT_CLUSTER]: null,
-      [GamepadInputKey.STANDARD_BUTTON_TOP_RIGHT_CLUSTER]: null,
-      [GamepadInputKey.STANDARD_BUTTON_RIGHT_RIGHT_CLUSTER]: null,
-    };
+    this.setInputMapping({
+      [GamepadInputKey.STANDARD_BUTTON_LEFT_LEFT_CLUSTER]: Command.LEFT,
+      [GamepadInputKey.STANDARD_BUTTON_RIGHT_LEFT_CLUSTER]: Command.RIGHT,
+      [GamepadInputKey.STANDARD_BUTTON_TOP_LEFT_CLUSTER]: Command.ROTATE,
+      [GamepadInputKey.STANDARD_BUTTON_BOTTOM_LEFT_CLUSTER]: Command.DOWN,
+      [GamepadInputKey.STANDARD_BUTTON_TOP_RIGHT_CLUSTER]: Command.HOLD,
+      [GamepadInputKey.STANDARD_BUTTON_BOTTOM_RIGHT_CLUSTER]: Command.HARD_LOCK,
+    });
   }
 
-  private updateKeyStates(): void {
+  protected updateKeyStates(): void {
     const gamepad = navigator.getGamepads()[this.gamepadIndex];
 
     if (!gamepad) {
       return;
     }
 
-    for (const k of Object.keys(this.lastTriggers) as GamepadInputKey[]) {
+    if (this.lastTimestamp === gamepad.timestamp) {
+      return;
+    }
+
+    for (const k of this.getMappedInputKeys()) {
       const gpButton = parseInt(k, 10);
 
       if (!gamepad.buttons[gpButton].pressed) {
-        this.lastTriggers[k] = null;
-      } else if (this.lastTriggers[k] === null) {
-        this.triggerCommand(k);
+        this.unsetTrigger(k);
+      } else {
+        this.requestUsage();
+        this.tryTrigger(k);
       }
     }
-  }
 
-  private processKeyStates(): void {
-    const now = Date.now();
-
-    for (const k of Object.keys(this.lastTriggers) as GamepadInputKey[]) {
-      if (this.lastTriggers[k] !== null && this.lastTriggers[k] !== undefined) {
-        const isPumpKey = this.pumpKeys.includes(k);
-        const isLockedPumpKey = Boolean(this.pumpKeyLocks[k]);
-
-        if (isPumpKey && isLockedPumpKey) {
-          continue;
-        }
-
-        if (isPumpKey) {
-          this.pumpKeyLocks[k] = true;
-        }
-
-        if (now - (this.lastTriggers[k] || now) > 180) {
-          this.triggerCommand(k);
-        }
-      }
-    }
-  }
-
-  private inputCycle(): void {
-    this.nextInputCycle = window.setTimeout(() => {
-      this.updateKeyStates();
-      this.processKeyStates();
-
-      this.inputCycle();
-    }, 10);
-  }
-
-  private triggerCommand(k: GamepadInputKey) {
-    const cmd = inputMapping[k];
-
-    if (cmd) {
-      this.requestCommand(cmd);
-    }
-
-    this.lastTriggers[k] = Date.now();
+    this.lastTimestamp = gamepad.timestamp;
   }
 
   public register(): void {
-    this.isRegistered = true;
-
-    if (this.nextInputCycle === -1) {
-      this.inputCycle();
-    }
-  }
-
-  public unregister(): void {
-    this.isRegistered = false;
+    super.register();
+    this.start();
   }
 }

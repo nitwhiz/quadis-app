@@ -14,6 +14,7 @@ import MainView from './views/MainView.vue';
 
 * {
   box-sizing: border-box;
+  user-select: none;
 }
 
 html,
