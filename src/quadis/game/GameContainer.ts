@@ -45,6 +45,12 @@ export default class GameContainer extends Container {
 
   private ticker: Ticker;
 
+  private fallingPiecePredictionBuffer: {
+    rotation: number;
+    x: number;
+    y: number;
+  }[];
+
   constructor(
     player: Player,
     domContainers: GameDOMLinks,
@@ -94,6 +100,8 @@ export default class GameContainer extends Container {
 
     this.gameOver = false;
 
+    this.fallingPiecePredictionBuffer = [];
+
     this.ticker.start();
   }
 
@@ -138,6 +146,23 @@ export default class GameContainer extends Container {
     this.roomService.on(
       this.getEventType(EVENT_FALLING_PIECE_UPDATE),
       (event: FallingPieceUpdateEvent) => {
+        const prediction = this.fallingPiecePredictionBuffer.shift();
+
+        if (
+          prediction &&
+          event.payload.piece.token ===
+            this.fieldContainer.getFallingPieceContainer().piece &&
+          event.payload.rotation === prediction.rotation &&
+          event.payload.x === prediction.x &&
+          event.payload.y === prediction.y
+        ) {
+          console.log('dropping event; prediction was correct');
+          return;
+        } else {
+          console.log('incorrect prediction; clearing buffer');
+          this.fallingPiecePredictionBuffer.length = 0;
+        }
+
         this.fieldContainer.updateFallingPiece(
           event.payload.piece.token,
           event.payload.rotation,
@@ -156,21 +181,41 @@ export default class GameContainer extends Container {
     this.roomService.on(
       this.getEventType(EVENT_PLAYER_COMMAND),
       (cmd: Command) => {
+        let fallingPiecePredictionResult = false;
+
         switch (cmd) {
           case Command.ROTATE:
-            this.fieldContainer.tryTranslatePiece(1, 0, 0);
+            fallingPiecePredictionResult =
+              this.fieldContainer.tryTranslateFallingPiece(1, 0, 0);
             break;
           case Command.LEFT:
-            this.fieldContainer.tryTranslatePiece(0, -1, 0);
+            fallingPiecePredictionResult =
+              this.fieldContainer.tryTranslateFallingPiece(0, -1, 0);
             break;
           case Command.RIGHT:
-            this.fieldContainer.tryTranslatePiece(0, 1, 0);
+            fallingPiecePredictionResult =
+              this.fieldContainer.tryTranslateFallingPiece(0, 1, 0);
             break;
           case Command.DOWN:
-            this.fieldContainer.tryTranslatePiece(0, 0, 1);
+            fallingPiecePredictionResult =
+              this.fieldContainer.tryTranslateFallingPiece(0, 0, 1);
             break;
           default:
             break;
+        }
+
+        if (fallingPiecePredictionResult) {
+          const fallingPiece = this.fieldContainer.getFallingPieceContainer();
+
+          this.fallingPiecePredictionBuffer.push({
+            rotation: fallingPiece.rotation,
+            x: Math.floor(
+              fallingPiece.position.x / this.fieldContainer.blockSize,
+            ),
+            y: Math.floor(
+              fallingPiece.position.y / this.fieldContainer.blockSize,
+            ),
+          });
         }
       },
     );

@@ -108,8 +108,8 @@ export default class RoomService extends EventEmitter<
   }
 
   private handlePlayerCommand(cmd: Command): void {
-    this.sendPlayerCommand(cmd);
     this.runPlayerCommandLocally(cmd);
+    this.sendPlayerCommand(cmd);
   }
 
   private runPlayerCommandLocally(cmd: Command): void {

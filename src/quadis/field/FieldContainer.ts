@@ -9,7 +9,7 @@ export default class FieldContainer extends DOMLinkedContainer {
 
   public static DEFAULT_FIELD_WIDTH = 10;
 
-  private readonly blockSize: number;
+  public readonly blockSize: number;
 
   private fieldData: Uint8Array;
 
@@ -51,37 +51,49 @@ export default class FieldContainer extends DOMLinkedContainer {
     this.update(true);
   }
 
-  public tryTranslatePiece(dr: number, dx: number, dy: number): void {
+  public tryTranslateFallingPiece(dr: number, dx: number, dy: number): boolean {
     const destR = this.fallingPieceContainer.rotation + dr;
 
-    const destX = this.fallingPieceContainer.position.x + dx * this.blockSize;
-    const destY = this.fallingPieceContainer.position.y + dy * this.blockSize;
+    const destFieldX =
+      this.fallingPieceContainer.position.x / this.blockSize + dx;
+    const destFieldY =
+      this.fallingPieceContainer.position.y / this.blockSize + dy;
 
     const piece = this.fallingPieceContainer.piece;
 
-    if (
-      piece === null ||
-      destX < 0 ||
-      destX > this.fieldWidth - 1 ||
-      destY < 0 ||
-      destY > this.fieldHeight - 1
-    ) {
-      return;
+    if (piece === null || destFieldX < 0 || destFieldY < 0) {
+      return false;
     }
 
     for (let x = 0; x < 4; ++x) {
       for (let y = 0; y < 4; ++y) {
-        if (
-          getPieceDataXY(piece, destR, x, y) !== 0 &&
-          this.fieldData[destX + destY * this.fieldWidth] !== 0
-        ) {
-          return;
+        if (getPieceDataXY(piece, destR, x, y) !== 0) {
+          const tx = destFieldX + x;
+          const ty = destFieldY + y;
+
+          if (
+            tx >= this.fieldWidth - 1 ||
+            ty >= this.fieldHeight - 1 ||
+            this.fieldData[tx + ty * this.fieldWidth] !== 0
+          ) {
+            return false;
+          }
         }
       }
     }
 
     this.fallingPieceContainer.rotation = destR;
+
+    const destX = this.fallingPieceContainer.position.x + dx * this.blockSize;
+    const destY = this.fallingPieceContainer.position.y + dy * this.blockSize;
+
     this.fallingPieceContainer.position.set(destX, destY);
+
+    return true;
+  }
+
+  public getFallingPieceContainer(): PieceContainer {
+    return this.fallingPieceContainer;
   }
 
   public updateFallingPiece(

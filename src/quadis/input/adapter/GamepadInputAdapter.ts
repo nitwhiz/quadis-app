@@ -1,3 +1,7 @@
+/**
+ * only supports standard controllers, like the Xbox 360 Controller
+ */
+
 import { InputAdapter } from './InputAdapter';
 import { Command } from '../../command/Command';
 
@@ -28,6 +32,11 @@ export default class GamepadInputAdapter extends InputAdapter<GamepadInputKey> {
 
   public init(): void {
     window.addEventListener('gamepadconnected', (e) => {
+      if (e.gamepad.mapping !== 'standard') {
+        console.warn('this gamepad is not supported!');
+        return;
+      }
+
       if (this.gamepadIndex !== -1 && this.gamepadIndex !== e.gamepad.index) {
         this.stop();
       }
