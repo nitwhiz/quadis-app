@@ -2,15 +2,13 @@ import { Application } from 'pixi.js';
 import GameContainer from './GameContainer';
 
 export default class GameHost {
-  private static INSTANCE: GameHost | null;
-
   private isInjected = false;
 
   private readonly app: Application;
 
   private readonly games: Record<string, GameContainer>;
 
-  private constructor() {
+  constructor() {
     this.app = new Application({
       resizeTo: window,
       backgroundAlpha: 0,
@@ -46,13 +44,5 @@ export default class GameHost {
       document.body.appendChild(this.app.view);
       this.isInjected = true;
     }
-  }
-
-  public static getInstance(): GameHost {
-    if (!GameHost.INSTANCE) {
-      GameHost.INSTANCE = new GameHost();
-    }
-
-    return GameHost.INSTANCE;
   }
 }
