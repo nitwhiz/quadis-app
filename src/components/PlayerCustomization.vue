@@ -1,3 +1,27 @@
+<script setup lang="ts">
+import { PropType } from 'vue';
+import usePlayerCustomization from '../composables/usePlayerCustomization';
+
+const props = defineProps({
+  type: {
+    type: String as PropType<'join' | 'create'>,
+    default: 'create',
+  },
+});
+
+const emit = defineEmits(['confirm']);
+
+const { playerName, isConfirmed } = usePlayerCustomization();
+
+const confirm = () => {
+  if (props.type === 'create') {
+    isConfirmed.value = true;
+  }
+
+  emit('confirm');
+};
+</script>
+
 <template>
   <div class="customization">
     <div class="name">
@@ -18,38 +42,6 @@
     </div>
   </div>
 </template>
-
-<script lang="ts">
-import { defineComponent, PropType } from 'vue';
-import usePlayerCustomization from '../composables/usePlayerCustomization';
-
-export default defineComponent({
-  props: {
-    type: {
-      type: String as PropType<'join' | 'create'>,
-      default: 'create',
-    },
-  },
-  emits: ['confirm'],
-  setup() {
-    const { playerName, isConfirmed } = usePlayerCustomization();
-
-    return {
-      playerName,
-      isConfirmed,
-    };
-  },
-  methods: {
-    confirm() {
-      if (this.type === 'create') {
-        this.isConfirmed = true;
-      }
-
-      this.$emit('confirm');
-    },
-  },
-});
-</script>
 
 <style lang="scss" scoped>
 .customization {

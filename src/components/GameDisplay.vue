@@ -1,3 +1,58 @@
+<script setup lang="ts">
+import { onMounted, onUnmounted, PropType, ref } from 'vue';
+import Player from '../quadis/player/Player';
+import GameHost from '../quadis/game/GameHost';
+import GameContainer from '../quadis/game/GameContainer';
+import RoomService from '../quadis/room/RoomService';
+
+const props = defineProps({
+  isMain: {
+    type: Boolean,
+    required: true,
+  },
+  player: {
+    type: Object as PropType<Player>,
+    required: true,
+  },
+  isTarget: {
+    type: Boolean,
+    default: false,
+  },
+});
+
+const gameWrapper = ref<HTMLDivElement | null>(null);
+const nextPieceWrapper = ref(null);
+const holdingPieceWrapper = ref(null);
+
+const score = ref(props.player.score);
+const gameHost = GameHost.getInstance();
+let game: GameContainer | null = null;
+
+onMounted(() => {
+  console.log('mount.');
+
+  const gameContainer = new GameContainer(
+    props.player,
+    {
+      gameContainer: gameWrapper.value as HTMLDivElement,
+      nextPieceContainer: nextPieceWrapper.value,
+      holdingPieceContainer: holdingPieceWrapper.value,
+    },
+    RoomService.getInstance(),
+  );
+
+  gameHost.addGame(gameContainer);
+
+  game = gameContainer;
+});
+
+onUnmounted(() => {
+  console.log('unmount.');
+
+  gameHost.removeGame(game?.getId() ?? 'dead-beef');
+});
+</script>
+
 <template>
   <div
     :data-player-id="player.gameId"
@@ -8,79 +63,16 @@
       <div class="player">{{ player.name }}</div>
       <div class="score-line">SCORE {{ score.score }}</div>
       <div class="score-line">LINES {{ score.lines }}</div>
-      <div ref="game" class="game-canvas"></div>
+      <div ref="gameWrapper" class="game-canvas"></div>
     </div>
     <div v-if="isMain" class="meta">
       <div class="next">NEXT</div>
-      <div ref="nextPiece" class="next-piece"></div>
+      <div ref="nextPieceWrapper" class="next-piece"></div>
       <div class="hold">HOLD</div>
-      <div ref="holdingPiece" class="holding-piece"></div>
+      <div ref="holdingPieceWrapper" class="holding-piece"></div>
     </div>
   </div>
 </template>
-
-<script lang="ts">
-import { defineComponent, PropType, ref } from 'vue';
-import Player from '../quadis/player/Player';
-import RoomService from '../quadis/room/RoomService';
-import GameHost from '../quadis/game/GameHost';
-import GameContainer from '../quadis/game/GameContainer';
-
-export default defineComponent({
-  props: {
-    isMain: {
-      type: Boolean,
-      required: true,
-    },
-    player: {
-      type: Object as PropType<Player>,
-      required: true,
-    },
-    isTarget: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  setup(props) {
-    const score = ref(props.player.score);
-    const gameHost = GameHost.getInstance();
-
-    return {
-      score,
-      gameHost,
-    };
-  },
-  data() {
-    return {
-      game: null as GameContainer | null,
-    };
-  },
-  mounted() {
-    console.log('mount.');
-
-    const game = new GameContainer(
-      this.player,
-      {
-        gameContainer: this.$refs.game as HTMLDivElement,
-        nextPieceContainer: this.$refs.nextPiece as HTMLDivElement | undefined,
-        holdingPieceContainer: this.$refs.holdingPiece as
-          | HTMLDivElement
-          | undefined,
-      },
-      RoomService.getInstance(),
-    );
-
-    this.gameHost.addGame(game);
-
-    this.game = game;
-  },
-  unmounted() {
-    console.log('unmount.');
-
-    this.gameHost.removeGame(this.game?.getId() ?? 'dead-beef');
-  },
-});
-</script>
 
 <style lang="scss" scoped>
 .game-display {

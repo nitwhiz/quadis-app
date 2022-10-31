@@ -26,8 +26,8 @@ import { Command } from '../command/Command';
 
 interface GameDOMLinks {
   gameContainer: HTMLElement;
-  nextPieceContainer?: HTMLElement;
-  holdingPieceContainer?: HTMLElement;
+  nextPieceContainer?: HTMLElement | null;
+  holdingPieceContainer?: HTMLElement | null;
 }
 
 export default class GameContainer extends Container {
