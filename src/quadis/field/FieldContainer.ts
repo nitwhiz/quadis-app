@@ -1,8 +1,8 @@
 import DOMLinkedContainer from '../common/DOMLinkedContainer';
 import { PieceContainer } from '../piece/PieceContainer';
-import { Graphics } from 'pixi.js';
 import ColorMap from '../piece/color/ColorMap';
 import { getPieceDataXY, Piece } from '../piece/Piece';
+import { Graphics } from '@pixi/graphics';
 
 export default class FieldContainer extends DOMLinkedContainer {
   public static DEFAULT_FIELD_HEIGHT = 20;

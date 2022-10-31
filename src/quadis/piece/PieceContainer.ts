@@ -1,6 +1,7 @@
-import { Container, Graphics, IDestroyOptions } from 'pixi.js';
 import { clampRotation, getFaceCount, getPieceDataXY, Piece } from './Piece';
 import ColorMap from './color/ColorMap';
+import { Graphics } from '@pixi/graphics';
+import { Container, IDestroyOptions } from '@pixi/display';
 
 export class PieceContainer extends Container {
   private static preBakedPieceFaceGraphicsByBlockSize: Record<

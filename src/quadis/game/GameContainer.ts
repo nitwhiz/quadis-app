@@ -1,7 +1,6 @@
 import Player from '../player/Player';
 import SidePieceContainer from '../piece/SidePieceContainer';
 import RoomService from '../room/RoomService';
-import { Container, IDestroyOptions, Ticker, UPDATE_PRIORITY } from 'pixi.js';
 import { EVENT_PLAYER_COMMAND, gameEventType } from '../event/ClientEvent';
 import {
   EVENT_FALLING_PIECE_UPDATE,
@@ -23,6 +22,8 @@ import {
 } from '../piece/Piece';
 import FieldContainer from '../field/FieldContainer';
 import { Command } from '../command/Command';
+import { Container, IDestroyOptions } from '@pixi/display';
+import { Ticker, UPDATE_PRIORITY } from '@pixi/ticker';
 
 interface GameDOMLinks {
   gameContainer: HTMLElement;

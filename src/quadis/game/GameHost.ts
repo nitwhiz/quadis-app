@@ -1,5 +1,5 @@
-import { Application } from 'pixi.js';
 import GameContainer from './GameContainer';
+import { Application } from '@pixi/app';
 
 export default class GameHost {
   private isInjected = false;
@@ -41,7 +41,7 @@ export default class GameHost {
 
   public injectApp(): void {
     if (!this.isInjected) {
-      document.body.appendChild(this.app.view);
+      document.body.appendChild(this.app.view as HTMLCanvasElement);
       this.isInjected = true;
     }
   }
