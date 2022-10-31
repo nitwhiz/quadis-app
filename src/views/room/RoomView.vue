@@ -5,7 +5,6 @@ import { useRoute, useRouter } from 'vue-router';
 import usePlayerCustomization from '../../composables/usePlayerCustomization';
 import Player from '../../quadis/player/Player';
 import { computed, onMounted, ref } from 'vue';
-import RoomService from '../../quadis/room/RoomService';
 import {
   EVENT_ADD_PLAYER,
   EVENT_READY,
@@ -19,16 +18,19 @@ import {
   EVENT_SCORE_UPDATE,
   ScoreUpdateEvent,
 } from '../../quadis/event/ServerEvent';
-import axios from 'axios';
+import { useRoomService } from '../../composables/useRoomService';
 
 const { params } = useRoute();
 const router = useRouter();
+const roomService = await useRoomService();
 
-const roomId = params.roomId as string;
+roomService.setRoomId(params.roomId as string);
 
-await axios.get(RoomService.getUrl('http', `rooms/${roomId}`)).catch(() => {
+const roomAvailable = await roomService.checkRoom();
+
+if (!roomAvailable) {
   router.push({ name: 'home' });
-});
+}
 
 const { playerName, isConfirmed } = usePlayerCustomization();
 
@@ -47,13 +49,11 @@ const errorMessage = computed(() => {
 });
 
 const start = () => {
-  RoomService.getInstance().start();
+  roomService.start();
 };
 
 const handlePlayerCustomizationConfirmation = () => {
   error.value = null;
-
-  const roomService = RoomService.getInstance(roomId);
 
   roomService.on(EVENT_READY, () => {
     isConfirmed.value = true;

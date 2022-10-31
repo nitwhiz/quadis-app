@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, PropType, ref } from 'vue';
 import Player from '../quadis/player/Player';
-import GameHost from '../quadis/game/GameHost';
 import GameContainer from '../quadis/game/GameContainer';
-import RoomService from '../quadis/room/RoomService';
+import { useRoomService } from '../composables/useRoomService';
+import { useGameHost } from '../composables/useGameHost';
+
+const roomService = await useRoomService();
+const gameHost = useGameHost();
 
 const props = defineProps({
   isMain: {
@@ -25,7 +28,6 @@ const nextPieceWrapper = ref(null);
 const holdingPieceWrapper = ref(null);
 
 const score = ref(props.player.score);
-const gameHost = GameHost.getInstance();
 let game: GameContainer | null = null;
 
 onMounted(() => {
@@ -38,7 +40,7 @@ onMounted(() => {
       nextPieceContainer: nextPieceWrapper.value,
       holdingPieceContainer: holdingPieceWrapper.value,
     },
-    RoomService.getInstance(),
+    roomService,
   );
 
   gameHost.addGame(gameContainer);

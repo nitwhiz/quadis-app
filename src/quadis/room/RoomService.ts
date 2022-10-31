@@ -32,13 +32,9 @@ import {
 export default class RoomService extends EventEmitter<
   ServerEventTypes | ClientEventTypes | string
 > {
-  public static gameServer = '';
+  private readonly gameServer: string;
 
-  public static tls = false;
-
-  private static INSTANCE: RoomService | null = null;
-
-  private readonly roomId: string;
+  private readonly tls: boolean;
 
   private socketConn: WebSocket | null;
 
@@ -46,10 +42,15 @@ export default class RoomService extends EventEmitter<
 
   private mainPlayer: Player | null;
 
-  constructor(roomId: string) {
+  private roomId: string | null;
+
+  constructor(gameServer: string, tls: boolean) {
     super();
 
-    this.roomId = roomId;
+    this.gameServer = gameServer;
+    this.tls = tls;
+
+    this.roomId = null;
 
     this.socketConn = null;
 
@@ -61,20 +62,8 @@ export default class RoomService extends EventEmitter<
     this.mainPlayer = null;
   }
 
-  public static getInstance(roomId: string | null = null): RoomService {
-    // todo: this is weird design
-
-    if (roomId !== null) {
-      if (RoomService.INSTANCE !== null) {
-        RoomService.INSTANCE.removeAllListeners();
-      }
-
-      RoomService.INSTANCE = new RoomService(roomId);
-    } else if (RoomService.INSTANCE === null) {
-      throw new Error('missing room instance');
-    }
-
-    return RoomService.INSTANCE;
+  public setRoomId(roomId: string): void {
+    this.roomId = roomId;
   }
 
   private addHelloListener(playerName: string) {
@@ -136,10 +125,8 @@ export default class RoomService extends EventEmitter<
     this.socketConn?.send(cmd);
   }
 
-  public static getUrl(protocol: string, path: string): string {
-    return `${protocol}${RoomService.tls ? 's' : ''}://${
-      RoomService.gameServer
-    }/${path}`;
+  public getUrl(protocol: string, path: string): string {
+    return `${protocol}${this.tls ? 's' : ''}://${this.gameServer}/${path}`;
   }
 
   public addOpenHandler(playerName: string): void {
@@ -213,8 +200,12 @@ export default class RoomService extends EventEmitter<
   }
 
   public connect(playerName: string): void {
+    if (!this.roomId) {
+      return;
+    }
+
     this.socketConn = new WebSocket(
-      RoomService.getUrl('ws', `rooms/${this.roomId}/socket`),
+      this.getUrl('ws', `rooms/${this.roomId}/socket`),
     );
 
     this.addCloseListener();
@@ -247,14 +238,32 @@ export default class RoomService extends EventEmitter<
   }
 
   public start(): Promise<boolean> {
+    if (!this.roomId) {
+      return Promise.resolve(false);
+    }
+
     return axios
-      .post(RoomService.getUrl('http', `rooms/${this.roomId}/start`))
+      .post(this.getUrl('http', `rooms/${this.roomId}/start`))
       .then(() => {
         return true;
       })
       .catch((reason) => {
         console.log('start request failed:', reason);
 
+        return false;
+      });
+  }
+
+  public checkRoom(): Promise<boolean> {
+    if (!this.roomId) {
+      return Promise.resolve(false);
+    }
+
+    return axios
+      .get(this.getUrl('http', `rooms/${this.roomId}`))
+      .then(() => true)
+      .catch(() => {
+        this.roomId = null;
         return false;
       });
   }
