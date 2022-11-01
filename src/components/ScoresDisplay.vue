@@ -4,7 +4,7 @@ import Score from '../quadis/score/Score';
 
 const props = defineProps({
   scores: {
-    type: [] as PropType<
+    type: Array as PropType<
       { gameId: string; playerName: string; score: Score }[]
     >,
     required: true,
