@@ -5,7 +5,7 @@ import ScoresDisplay from '../../components/ScoresDisplay.vue';
 import { useRoute, useRouter } from 'vue-router';
 import usePlayerCustomization from '../../composables/usePlayerCustomization';
 import Player from '../../quadis/player/Player';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import {
   BedrockTargetsUpdateEvent,
   RoomScoresEvent,
@@ -50,10 +50,6 @@ const errorMessage = computed(() => {
       return '';
   }
 });
-
-const start = () => {
-  roomService.start();
-};
 
 const handlePlayerCustomizationConfirmation = () => {
   error.value = null;
@@ -121,10 +117,27 @@ const hideScores = () => {
   gameHost.show();
 };
 
+const handleGameStart = (e: KeyboardEvent) => {
+  if (
+    e.key === ' ' &&
+    mainPlayer.value?.isHost &&
+    !showScores.value &&
+    !roomService.isGameRunning
+  ) {
+    roomService.start();
+  }
+};
+
 onMounted(() => {
   if (isConfirmed.value) {
     handlePlayerCustomizationConfirmation();
   }
+
+  document.addEventListener('keydown', handleGameStart);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleGameStart);
 });
 </script>
 
@@ -147,9 +160,6 @@ onMounted(() => {
           class="game current-game"
         >
           <GameDisplay :is-main="true" :player="mainPlayer" />
-          <button v-if="mainPlayer.isHost" class="start" @click="start">
-            START
-          </button>
         </div>
         <div class="other-games">
           <div v-for="p in opponents" :key="p.gameId" class="game other-game">

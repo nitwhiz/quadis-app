@@ -30,6 +30,8 @@ export default class RoomService extends EventEmitter<
 
   private roomId: string | null;
 
+  private gameRunning: boolean;
+
   constructor(gameServer: string, tls: boolean) {
     super();
 
@@ -46,6 +48,12 @@ export default class RoomService extends EventEmitter<
     ]);
 
     this.mainPlayer = null;
+
+    this.gameRunning = false;
+  }
+
+  public get isGameRunning() {
+    return this.gameRunning;
   }
 
   public setRoomId(roomId: string): void {
@@ -139,8 +147,19 @@ export default class RoomService extends EventEmitter<
 
     if (event.origin.type === ServerEventOrigin.GAME) {
       this.emit(gameEventType(event.type, event.origin.id), event);
+
+      if (
+        this.mainPlayer?.gameId === event.origin.id &&
+        event.type === ServerEventType.GAME_OVER
+      ) {
+        this.gameRunning = false;
+      }
     } else if (event.origin.type === ServerEventOrigin.ROOM) {
       this.handleRoomEvent(event);
+
+      if (event.type === ServerEventType.START) {
+        this.gameRunning = true;
+      }
     } else if (event.origin.type === ServerEventOrigin.SYSTEM) {
       if (event.type === ServerEventType.WINDOW) {
         for (const e of event.payload.events) {
