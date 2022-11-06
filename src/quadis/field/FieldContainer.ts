@@ -142,6 +142,7 @@ export default class FieldContainer extends DOMLinkedContainer {
           this.fieldGraphics.beginFill(
             ColorMap.DEFAULT_COLOR_MAP.getColor(blockData),
           );
+
           this.fieldGraphics.drawRect(
             x * this.blockSize,
             y * this.blockSize,
@@ -154,13 +155,13 @@ export default class FieldContainer extends DOMLinkedContainer {
 
     this.fieldGraphics.lineStyle(1, 0xffffff, 0.1);
 
-    for (let y = 0; y < this.fieldHeight; ++y) {
+    for (let y = 1; y < this.fieldHeight; ++y) {
       this.fieldGraphics
         .moveTo(0, y * this.blockSize)
         .lineTo(this.fieldWidth * this.blockSize, y * this.blockSize);
     }
 
-    for (let x = 0; x < this.fieldWidth; ++x) {
+    for (let x = 1; x < this.fieldWidth; ++x) {
       this.fieldGraphics
         .moveTo(x * this.blockSize, 0)
         .lineTo(x * this.blockSize, this.fieldHeight * this.blockSize);
