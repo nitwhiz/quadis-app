@@ -1,5 +1,6 @@
 import GameContainer from './GameContainer';
 import { Application } from '@pixi/app';
+import { GameLogger } from '../../logger/Logger';
 
 export default class GameHost {
   private isInjected = false;
@@ -26,7 +27,7 @@ export default class GameHost {
 
   public removeGame(id: string) {
     if (!this.games[id]) {
-      console.warn(`unknown game id %s`, id);
+      GameLogger.warn(`unknown game id %s`, id);
       return;
     }
 

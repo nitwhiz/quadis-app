@@ -1,5 +1,6 @@
 import axios from 'axios';
 import RoomService from '../quadis/room/RoomService';
+import { RoomLogger } from '../logger/Logger';
 
 let gameServer = '';
 let tls = false;
@@ -14,7 +15,7 @@ const envRequest = axios
     gameServer = response.data.gameServer;
     tls = response.data.tls;
 
-    console.log(
+    RoomLogger.debug(
       `creating RoomService for ${gameServer} (tls: ${tls ? 'yes' : 'no'})`,
     );
 

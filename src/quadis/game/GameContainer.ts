@@ -19,6 +19,7 @@ import { Command } from '../command/Command';
 import { Container, IDestroyOptions } from '@pixi/display';
 import { Ticker, UPDATE_PRIORITY } from '@pixi/ticker';
 import { gameEventType } from '../event/GameEvent';
+import { GameLogger } from '../../logger/Logger';
 
 interface GameDOMLinks {
   gameContainer: HTMLElement;
@@ -152,10 +153,10 @@ export default class GameContainer extends Container {
           event.payload.x === prediction.x &&
           event.payload.y === prediction.y
         ) {
-          console.log('dropping event; prediction was correct');
+          GameLogger.debug('dropping event; prediction was correct');
           return;
         } else {
-          console.log('incorrect prediction; clearing buffer');
+          GameLogger.debug('incorrect prediction; clearing buffer');
           this.fallingPiecePredictionBuffer.length = 0;
         }
 

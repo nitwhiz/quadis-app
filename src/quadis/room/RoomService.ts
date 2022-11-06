@@ -14,6 +14,7 @@ import {
 } from '../event/ServerEvent';
 import { ClientEventMap, ClientEventType } from '../event/ClientEvent';
 import { GameEventType, gameEventType } from '../event/GameEvent';
+import { PerformanceLogger, RoomLogger } from '../../logger/Logger';
 
 export default class RoomService extends EventEmitter<
   ServerEventMap | ClientEventMap | GameEventType
@@ -77,7 +78,7 @@ export default class RoomService extends EventEmitter<
           this.socketConn?.removeEventListener('message', helloListener);
         }
       } catch (e) {
-        console.error('unable to process hello', msgEvent, e);
+        RoomLogger.error('unable to process hello', msgEvent, e);
       }
     };
 
@@ -86,7 +87,7 @@ export default class RoomService extends EventEmitter<
 
   private addCloseListener(): void {
     this.socketConn?.addEventListener('close', (e) => {
-      console.log('socket closed');
+      RoomLogger.debug('socket closed');
 
       if (e.reason === 'room_has_games_running') {
         this.emit(ClientEventType.ROOM_HAS_GAMES_RUNNING);
@@ -96,7 +97,7 @@ export default class RoomService extends EventEmitter<
 
   private addErrorListener(): void {
     this.socketConn?.addEventListener('error', (err) => {
-      console.error('socket error', err);
+      RoomLogger.error('socket error', err);
       this.socketConn?.close();
     });
   }
@@ -125,7 +126,7 @@ export default class RoomService extends EventEmitter<
 
   public addOpenHandler(playerName: string): void {
     this.socketConn?.addEventListener('open', () => {
-      console.log('socket open');
+      RoomLogger.debug('socket open');
 
       this.addHelloListener(playerName);
 
@@ -143,7 +144,7 @@ export default class RoomService extends EventEmitter<
     const latencyPublish = now - event.publishedAt;
     const latencySend = now - event.sentAt;
 
-    console.log(event.type, latencyPublish, latencySend);
+    PerformanceLogger.debug(event.type, latencyPublish, latencySend);
 
     if (event.origin.type === ServerEventOrigin.GAME) {
       this.emit(gameEventType(event.type, event.origin.id), event);
@@ -198,7 +199,7 @@ export default class RoomService extends EventEmitter<
 
           this.handleServerEvent(event);
         } catch (e) {
-          console.error('unable to process message data', msgEvent, e);
+          RoomLogger.error('unable to process message data', msgEvent, e);
         }
       },
     );
@@ -253,7 +254,7 @@ export default class RoomService extends EventEmitter<
         return true;
       })
       .catch((reason) => {
-        console.log('start request failed:', reason);
+        RoomLogger.error('start request failed:', reason);
 
         return false;
       });

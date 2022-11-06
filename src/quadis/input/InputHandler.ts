@@ -6,6 +6,7 @@ import {
 } from './adapter/InputAdapter';
 import { Command } from '../command/Command';
 import EventEmitter from 'eventemitter3';
+import { InputLogger } from '../../logger/Logger';
 
 export const EVENT_INPUT_COMMAND = 'input_handler_input';
 
@@ -51,7 +52,7 @@ export default class InputHandler extends EventEmitter<
       return;
     }
 
-    console.log('requesting different adapter');
+    InputLogger.debug('requesting different adapter');
 
     this.adapter?.off(
       EVENT_INPUT_ADAPTER_INPUT,

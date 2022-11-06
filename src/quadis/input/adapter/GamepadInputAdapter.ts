@@ -4,6 +4,7 @@
 
 import { InputAdapter } from './InputAdapter';
 import { Command } from '../../command/Command';
+import { InputLogger } from '../../../logger/Logger';
 
 const enum GamepadInputKey {
   STANDARD_BUTTON_BOTTOM_RIGHT_CLUSTER = '0',
@@ -33,7 +34,7 @@ export default class GamepadInputAdapter extends InputAdapter<GamepadInputKey> {
   public init(): void {
     window.addEventListener('gamepadconnected', (e) => {
       if (e.gamepad.mapping !== 'standard') {
-        console.warn('this gamepad is not supported!');
+        InputLogger.warn('this gamepad is not supported!');
         return;
       }
 

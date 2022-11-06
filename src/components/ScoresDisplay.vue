@@ -22,7 +22,7 @@ const sortedScores = computed(() =>
 
 <template>
   <div class="scores-display">
-    <h1>HIGH SCORES</h1>
+    <h1>SCORES</h1>
     <div class="scores-wrapper">
       <div class="entry header">
         <div class="rank">

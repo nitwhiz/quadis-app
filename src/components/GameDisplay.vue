@@ -4,6 +4,7 @@ import Player from '../quadis/player/Player';
 import GameContainer from '../quadis/game/GameContainer';
 import { useRoomService } from '../composables/useRoomService';
 import { useGameHost } from '../composables/useGameHost';
+import { DefaultLogger } from '../logger/Logger';
 
 const roomService = await useRoomService();
 const gameHost = useGameHost();
@@ -31,7 +32,7 @@ const score = ref(props.player.score);
 let game: GameContainer | null = null;
 
 onMounted(() => {
-  console.log('mount.');
+  DefaultLogger.debug('mount.');
 
   const gameContainer = new GameContainer(
     props.player,
@@ -49,7 +50,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  console.log('unmount.');
+  DefaultLogger.debug('unmount.');
 
   gameHost.removeGame(game?.getId() ?? 'dead-beef');
 });

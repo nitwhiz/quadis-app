@@ -10,5 +10,7 @@ module.exports = {
     '@vue/typescript/recommended',
     'prettier',
   ],
-  rules: {},
+  rules: {
+    'no-console': 2,
+  },
 };
