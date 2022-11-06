@@ -8,7 +8,6 @@ export const enum ServerEventType {
   JOIN = 'room_join',
   LEAVE = 'room_leave',
   BEDROCK_TARGETS_UPDATE = 'room_bedrock_targets_update',
-  MESSAGE = 'room_message',
   FIELD_UPDATE = 'field_update',
   FALLING_PIECE_UPDATE = 'falling_piece_update',
   HOLDING_PIECE_UPDATE = 'holding_piece_update',
@@ -93,11 +92,6 @@ export interface BedrockTargetsPayload {
   targets: Record<string, string>;
 }
 
-export interface MessagePayload {
-  id: string;
-  parameters: Record<string, string>;
-}
-
 export type StartPayload = null;
 
 export type GameOverPayload = null;
@@ -136,10 +130,6 @@ export interface LeaveEvent extends RoomEvent<GamePayload> {
 export interface BedrockTargetsUpdateEvent
   extends RoomEvent<BedrockTargetsPayload> {
   type: ServerEventType.BEDROCK_TARGETS_UPDATE;
-}
-
-export interface MessageEvent extends RoomEvent<MessagePayload> {
-  type: ServerEventType.MESSAGE;
 }
 
 export interface RoomScoresEvent extends RoomEvent<ScoresPayload> {
@@ -186,7 +176,6 @@ export interface ServerEventMap {
   [ServerEventType.JOIN]: JoinEvent;
   [ServerEventType.LEAVE]: LeaveEvent;
   [ServerEventType.BEDROCK_TARGETS_UPDATE]: BedrockTargetsUpdateEvent;
-  [ServerEventType.MESSAGE]: MessageEvent;
   [ServerEventType.FIELD_UPDATE]: FieldUpdateEvent;
   [ServerEventType.FALLING_PIECE_UPDATE]: FallingPieceUpdateEvent;
   [ServerEventType.HOLDING_PIECE_UPDATE]: HoldingPieceUpdateEvent;

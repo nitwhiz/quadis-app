@@ -187,10 +187,13 @@ onMounted(() => {
 }
 
 .room {
+  width: 100%;
+  padding: 0 64px;
+
   .games {
     display: flex;
     justify-content: flex-start;
-    align-items: center;
+    align-items: flex-start;
 
     .game {
       margin: 12px;
@@ -205,6 +208,8 @@ onMounted(() => {
     .other-games {
       display: flex;
       flex-wrap: wrap;
+
+      width: 100%;
     }
   }
 }

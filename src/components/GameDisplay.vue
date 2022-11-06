@@ -24,8 +24,8 @@ const props = defineProps({
 });
 
 const gameWrapper = ref<HTMLDivElement | null>(null);
-const nextPieceWrapper = ref(null);
-const holdingPieceWrapper = ref(null);
+const nextPieceWrapper = ref<HTMLDivElement | null>(null);
+const holdingPieceWrapper = ref<HTMLDivElement | null>(null);
 
 const score = ref(props.player.score);
 let game: GameContainer | null = null;
@@ -68,9 +68,9 @@ onUnmounted(() => {
       <div ref="gameWrapper" class="game-canvas"></div>
     </div>
     <div v-if="isMain" class="meta">
-      <div class="next">NEXT</div>
+      <div class="side-label">NEXT</div>
       <div ref="nextPieceWrapper" class="next-piece"></div>
-      <div class="hold">HOLD</div>
+      <div class="side-label">HOLD</div>
       <div ref="holdingPieceWrapper" class="holding-piece"></div>
     </div>
   </div>
@@ -101,6 +101,15 @@ onUnmounted(() => {
     }
   }
 
+  &:not(.main) {
+    font-size: 8px;
+
+    .player,
+    .score-line {
+      margin-bottom: 8px;
+    }
+  }
+
   .game-wrapper {
     .game-canvas {
       background: black;
@@ -117,26 +126,14 @@ onUnmounted(() => {
     margin-bottom: 12px;
   }
 
-  &:not(.main) {
-    font-size: 8px;
-
-    .player,
-    .score-line {
-      margin-bottom: 8px;
-    }
-  }
-
-  .next {
-    margin: 24px 0 16px 0;
-  }
-
-  .hold {
-    margin: 16px 0;
-  }
-
-  .next,
-  .hold {
+  .side-label {
     text-align: right;
+
+    margin: 16px 0;
+
+    &:first-child {
+      margin-top: 52px;
+    }
   }
 }
 </style>
