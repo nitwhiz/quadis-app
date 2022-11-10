@@ -5,4 +5,5 @@ export const enum Command {
   ROTATE = 'X',
   HOLD = 'H',
   HARD_LOCK = 'P',
+  ITEM = 'I',
 }

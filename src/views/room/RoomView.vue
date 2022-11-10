@@ -7,7 +7,7 @@ import usePlayerCustomization from '../../composables/usePlayerCustomization';
 import Player from '../../quadis/player/Player';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import {
-  BedrockTargetsUpdateEvent,
+  TargetsUpdateEvent,
   RoomScoresEvent,
   ScoreUpdateEvent,
   ServerEventType,
@@ -75,8 +75,8 @@ const handlePlayerCustomizationConfirmation = () => {
   });
 
   roomService.on(
-    ServerEventType.BEDROCK_TARGETS_UPDATE,
-    (event: BedrockTargetsUpdateEvent) => {
+    ServerEventType.TARGETS_UPDATE,
+    (event: TargetsUpdateEvent) => {
       if (mainPlayer.value && event.payload.targets[mainPlayer.value.gameId]) {
         currentBedrockTargetId.value =
           event.payload.targets[mainPlayer.value.gameId];
