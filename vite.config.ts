@@ -11,4 +11,24 @@ export default defineConfig(() => ({
   esbuild: {
     platform: 'browser',
   },
+  build: {
+    cssCodeSplit: false,
+    rollupOptions: {
+      manualChunks: (id: string) => {
+        if (id.includes('node_modules')) {
+          let name = 'vendor';
+
+          if (id.includes('@pixi')) {
+            name += '.pixi';
+          } else if (id.includes('vue')) {
+            name += '.vue';
+          }
+
+          return name;
+        }
+
+        return 'index';
+      },
+    },
+  },
 }));
