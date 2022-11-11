@@ -15,6 +15,7 @@ export const enum ServerEventType {
   SCORE_UPDATE = 'score_update',
   GAME_OVER = 'game_over',
   ROOM_SCORES = 'room_scores',
+  ITEM_UPDATE = 'item_update',
 }
 
 export const enum ServerEventOrigin {
@@ -105,6 +106,10 @@ export interface EventWindowPayload {
   events: ServerEvent[];
 }
 
+export interface ItemPayload {
+  type: string | null;
+}
+
 // room events
 
 export interface HelloEvent extends RoomEvent<HelloPayload> {
@@ -162,6 +167,10 @@ export interface GameOverEvent extends GameEvent<GameOverPayload> {
   type: ServerEventType.GAME_OVER;
 }
 
+export interface ItemUpdateEvent extends GameEvent<ItemPayload> {
+  type: ServerEventType.ITEM_UPDATE;
+}
+
 // system event
 
 export interface EventWindowEvent extends SystemEvent<EventWindowPayload> {
@@ -183,6 +192,7 @@ export interface ServerEventMap {
   [ServerEventType.GAME_OVER]: GameOverEvent;
   [ServerEventType.WINDOW]: EventWindowEvent;
   [ServerEventType.ROOM_SCORES]: RoomScoresEvent;
+  [ServerEventType.ITEM_UPDATE]: ItemUpdateEvent;
 }
 
 export type ServerEvent = ServerEventMap[keyof ServerEventMap];

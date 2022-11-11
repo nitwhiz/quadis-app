@@ -5,6 +5,8 @@ import GameContainer from '../quadis/game/GameContainer';
 import { useRoomService } from '../composables/useRoomService';
 import { useGameHost } from '../composables/useGameHost';
 import { DefaultLogger } from '../logger/Logger';
+import { ItemUpdateEvent, ServerEventType } from '../quadis/event/ServerEvent';
+import { gameEventType } from '../quadis/event/GameEvent';
 
 const roomService = await useRoomService();
 const gameHost = useGameHost();
@@ -31,6 +33,17 @@ const holdingPieceWrapper = ref<HTMLDivElement | null>(null);
 const score = ref(props.player.score);
 let game: GameContainer | null = null;
 
+const currentItem = ref(null as string | null);
+
+const getCurrentItemUrl = (): string | undefined => {
+  if (currentItem.value) {
+    return new URL(`../assets/items/${currentItem.value}.png`, import.meta.url)
+      .href;
+  }
+
+  return undefined;
+};
+
 onMounted(() => {
   DefaultLogger.debug('mount.');
 
@@ -47,6 +60,11 @@ onMounted(() => {
   gameHost.addGame(gameContainer);
 
   game = gameContainer;
+
+  roomService.on(
+    gameEventType(ServerEventType.ITEM_UPDATE, game.getId()),
+    (event: ItemUpdateEvent) => (currentItem.value = event.payload.type),
+  );
 });
 
 onUnmounted(() => {
@@ -73,6 +91,10 @@ onUnmounted(() => {
       <div ref="nextPieceWrapper" class="next-piece"></div>
       <div class="side-label">HOLD</div>
       <div ref="holdingPieceWrapper" class="holding-piece"></div>
+      <div class="side-label">ITEM</div>
+      <div class="item">
+        <img v-if="currentItem" :src="getCurrentItemUrl()" alt="current item" />
+      </div>
     </div>
   </div>
 </template>
@@ -118,8 +140,24 @@ onUnmounted(() => {
   }
 
   .next-piece,
-  .holding-piece {
+  .holding-piece,
+  .item {
     background: black;
+  }
+
+  .item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    width: 68px;
+    height: 68px;
+
+    img {
+      width: 56px;
+      height: auto;
+      image-rendering: pixelated;
+    }
   }
 
   .player,
