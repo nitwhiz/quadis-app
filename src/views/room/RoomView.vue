@@ -122,7 +122,7 @@ const handleGameStart = (e: KeyboardEvent) => {
     e.key === ' ' &&
     mainPlayer.value?.isHost &&
     !showScores.value &&
-    !roomService.isGameRunning
+    !roomService.isMainGameRunning
   ) {
     roomService.start();
   }

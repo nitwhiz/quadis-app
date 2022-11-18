@@ -7,5 +7,5 @@ export type GameEventType = `game:${string}:${
 
 export const gameEventType = (
   eventType: ServerEventType | ClientEventType,
-  gameId: string,
-): GameEventType => `game:${gameId}:${eventType}`;
+  gameId: string | undefined,
+): GameEventType => `game:${gameId || '*'}:${eventType}`;

@@ -3,6 +3,8 @@ import { PieceContainer } from '../piece/PieceContainer';
 import ColorMap from '../piece/color/ColorMap';
 import { getPieceDataXY, Piece } from '../piece/Piece';
 import { Graphics } from '@pixi/graphics';
+import { encodeField } from './FieldUtils';
+import DebugDataCollector from '../../console/DebugDataCollector';
 
 export default class FieldContainer extends DOMLinkedContainer {
   public static DEFAULT_FIELD_HEIGHT = 20;
@@ -126,6 +128,18 @@ export default class FieldContainer extends DOMLinkedContainer {
       this.update(true);
     } else {
       this.fieldData.set(data);
+
+      DebugDataCollector.setCurrentField(
+        Array.from(
+          encodeField(
+            this.fieldData,
+            this.fieldWidth,
+            this.fieldHeight,
+          ).values(),
+        )
+          .map((bi) => bi.padStart(16, '0'))
+          .join(' '),
+      );
     }
 
     this.updateFieldGraphics();
