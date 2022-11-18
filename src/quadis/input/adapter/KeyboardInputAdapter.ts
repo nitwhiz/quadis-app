@@ -8,7 +8,7 @@ const enum KeyboardInputKey {
   ARROW_DOWN = 'ArrowDown',
   SHIFT = 'Shift',
   SPACE = ' ',
-  KEY_C = 'c',
+  KEY_I = 'i',
 }
 
 export default class KeyboardInputAdapter extends InputAdapter<KeyboardInputKey> {
@@ -27,7 +27,7 @@ export default class KeyboardInputAdapter extends InputAdapter<KeyboardInputKey>
       [KeyboardInputKey.ARROW_DOWN]: Command.DOWN,
       [KeyboardInputKey.SHIFT]: Command.HOLD,
       [KeyboardInputKey.SPACE]: Command.HARD_LOCK,
-      [KeyboardInputKey.KEY_C]: Command.ITEM,
+      [KeyboardInputKey.KEY_I]: Command.ITEM,
     });
   }
 

@@ -15,24 +15,28 @@ class Logger {
     this.tag = tag.toUpperCase();
   }
 
+  private getFullPrefix(prefix = ''): string {
+    return `[${import.meta.env.MODE.toUpperCase()}]${prefix}[${this.tag}]`;
+  }
+
   private writeInfo(prefix: string, ...args: any[]): void {
     if (import.meta.env.DEV) {
-      console.info(`${prefix}[${this.tag}]`, ...args);
+      console.info(this.getFullPrefix(prefix), ...args);
     }
   }
 
   private writeDebug(prefix: string, ...args: any[]): void {
     if (import.meta.env.DEV) {
-      console.debug(`${prefix}[${this.tag}]`, ...args);
+      console.debug(this.getFullPrefix(prefix), ...args);
     }
   }
 
   private writeWarning(...args: any[]): void {
-    console.error(`[${this.tag}]`, ...args);
+    console.error(this.getFullPrefix(), ...args);
   }
 
   private writeError(...args: any[]): void {
-    console.error(`[${this.tag}]`, ...args);
+    console.error(this.getFullPrefix(), ...args);
   }
 
   private static levelToString(l: LogLevel): string {

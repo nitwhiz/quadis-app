@@ -20,6 +20,8 @@ import { Container, IDestroyOptions } from '@pixi/display';
 import { Ticker, UPDATE_PRIORITY } from '@pixi/ticker';
 import { gameEventType } from '../event/GameEvent';
 import { GameLogger } from '../../logger/Logger';
+import { ConsoleEventType } from '../event/ConsoleEvent';
+import { decodeField } from '../field/FieldUtils';
 
 interface GameDOMLinks {
   gameContainer: HTMLElement;
@@ -216,6 +218,10 @@ export default class GameContainer extends Container {
         }
       },
     );
+
+    this.roomService.on(ConsoleEventType.SET_FIELD, (fieldWords: string) => {
+      this.fieldContainer.updateField(10, 20, decodeField(10, 20, fieldWords));
+    });
   }
 
   public reset(): void {

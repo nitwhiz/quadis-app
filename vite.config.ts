@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import vue from '@vitejs/plugin-vue';
 import eslintPlugin from 'vite-plugin-eslint';
 
@@ -6,12 +6,13 @@ export default defineConfig(() => ({
   plugins: [vue(), eslintPlugin()],
   server: {
     host: '0.0.0.0',
-    hmr: false,
+    hmr: true,
   },
   esbuild: {
     platform: 'browser',
   },
   build: {
+    target: ['es2020'],
     cssCodeSplit: false,
     rollupOptions: {
       manualChunks: (id: string) => {
@@ -30,5 +31,8 @@ export default defineConfig(() => ({
         return 'index';
       },
     },
+  },
+  test: {
+    clearMocks: true,
   },
 }));

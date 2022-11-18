@@ -13,4 +13,12 @@ module.exports = {
   rules: {
     'no-console': 2,
   },
+  overrides: [
+    {
+      files: ['test/**/*.spec.ts'],
+      rules: {
+        'no-console': 'off',
+      },
+    },
+  ],
 };

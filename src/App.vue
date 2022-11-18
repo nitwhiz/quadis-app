@@ -1,8 +1,32 @@
 <script setup lang="ts">
 import MainView from './views/MainView.vue';
+import ConsoleHost from './components/ConsoleHost.vue';
+import { onMounted, onUnmounted, ref } from 'vue';
+
+const consoleVisible = ref(false);
+
+const handleConsoleOpenHandler = (event: KeyboardEvent) => {
+  if (event.key === 'C' && event.ctrlKey && event.shiftKey) {
+    consoleVisible.value = true;
+
+    event.preventDefault();
+    event.stopPropagation();
+  } else if (event.key === 'Escape') {
+    consoleVisible.value = false;
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('keydown', handleConsoleOpenHandler);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleConsoleOpenHandler);
+});
 </script>
 
 <template>
+  <ConsoleHost v-if="consoleVisible" />
   <Suspense>
     <MainView />
     <template #fallback>Loading ...</template>

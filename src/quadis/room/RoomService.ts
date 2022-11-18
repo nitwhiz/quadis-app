@@ -15,9 +15,10 @@ import {
 import { ClientEventMap, ClientEventType } from '../event/ClientEvent';
 import { GameEventType, gameEventType } from '../event/GameEvent';
 import { PerformanceLogger, RoomLogger } from '../../logger/Logger';
+import { ConsoleEventMap } from '../event/ConsoleEvent';
 
 export default class RoomService extends EventEmitter<
-  ServerEventMap | ClientEventMap | GameEventType
+  ServerEventMap | ClientEventMap | GameEventType | ConsoleEventMap
 > {
   private readonly gameServer: string;
 
@@ -31,7 +32,7 @@ export default class RoomService extends EventEmitter<
 
   private roomId: string | null;
 
-  private gameRunning: boolean;
+  private mainGameRunning: boolean;
 
   constructor(gameServer: string, tls: boolean) {
     super();
@@ -50,11 +51,15 @@ export default class RoomService extends EventEmitter<
 
     this.mainPlayer = null;
 
-    this.gameRunning = false;
+    this.mainGameRunning = false;
   }
 
-  public get isGameRunning() {
-    return this.gameRunning;
+  public getMainPlayer() {
+    return this.mainPlayer;
+  }
+
+  public get isMainGameRunning() {
+    return this.mainGameRunning;
   }
 
   public setRoomId(roomId: string): void {
@@ -153,13 +158,13 @@ export default class RoomService extends EventEmitter<
         this.mainPlayer?.gameId === event.origin.id &&
         event.type === ServerEventType.GAME_OVER
       ) {
-        this.gameRunning = false;
+        this.mainGameRunning = false;
       }
     } else if (event.origin.type === ServerEventOrigin.ROOM) {
       this.handleRoomEvent(event);
 
       if (event.type === ServerEventType.START) {
-        this.gameRunning = true;
+        this.mainGameRunning = true;
       }
     } else if (event.origin.type === ServerEventOrigin.SYSTEM) {
       if (event.type === ServerEventType.WINDOW) {
