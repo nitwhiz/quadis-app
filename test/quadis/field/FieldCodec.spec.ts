@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { decodeField, encodeField } from '../../../src/quadis/field/FieldUtils';
+import { decode64, encode64 } from '../../../src/quadis/field/FieldCodec';
 
 test('encode empty field', () => {
   const field = new Uint8Array(
@@ -12,7 +12,7 @@ test('encode empty field', () => {
     ],
   );
 
-  const e = encodeField(field, 3, 4).join(' ');
+  const e = encode64(field, 3, 4).join(' ');
 
   expect(e).toBe('0000000000000000');
 });
@@ -28,7 +28,7 @@ test('encode w/ first token', () => {
     ],
   );
 
-  const e = encodeField(field, 3, 4).join(' ');
+  const e = encode64(field, 3, 4).join(' ');
 
   expect(e).toBe('0000100000000000');
 });
@@ -44,7 +44,7 @@ test('encode w/ last token', () => {
     ],
   );
 
-  const e = encodeField(field, 3, 4).join(' ');
+  const e = encode64(field, 3, 4).join(' ');
 
   expect(e).toBe('0000000000000001');
 });
@@ -60,7 +60,7 @@ test('encode w/ all tokens', () => {
     ],
   );
 
-  const e = encodeField(field, 3, 4).join(' ');
+  const e = encode64(field, 3, 4).join(' ');
 
   expect(e).toBe('0000123456781234');
 });
@@ -86,13 +86,13 @@ test('encode w/ big field', () => {
     ],
   );
 
-  const e = encodeField(field, 3, 14).join(' ');
+  const e = encode64(field, 3, 14).join(' ');
 
   expect(e).toBe('0000001234567812 3456781234567812 3456781234567812');
 });
 
 test('decode w/ last token', () => {
-  const d = decodeField(3, 4, '0000000000000001');
+  const d = decode64(3, 4, '0000000000000001');
 
   expect(d).toStrictEqual(
     // prettier-ignore
@@ -106,7 +106,7 @@ test('decode w/ last token', () => {
 });
 
 test('decode w/ all tokens', () => {
-  const d = decodeField(3, 4, '0000123456781234');
+  const d = decode64(3, 4, '0000123456781234');
 
   expect(d).toStrictEqual(
     // prettier-ignore
@@ -120,7 +120,7 @@ test('decode w/ all tokens', () => {
 });
 
 test('decode w/ big field', () => {
-  const d = decodeField(
+  const d = decode64(
     3,
     14,
     '0000001234567812 3456781234567812 3456781234567812',

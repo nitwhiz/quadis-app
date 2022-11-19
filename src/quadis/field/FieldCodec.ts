@@ -4,7 +4,7 @@ const TOKENS_PER_BYTE = 8 / BITS_PER_TOKEN;
 const BITS_PER_WORD = 64;
 const TOKENS_PER_WORD = (BITS_PER_WORD / 8) * TOKENS_PER_BYTE;
 
-export const encodeField = (
+export const encode64 = (
   data: Uint8Array,
   width: number,
   height: number,
@@ -42,7 +42,7 @@ export const encodeField = (
   return words;
 };
 
-export const decodeField = (
+export const decode64 = (
   width: number,
   height: number,
   words: string,
