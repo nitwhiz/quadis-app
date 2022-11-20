@@ -32,6 +32,8 @@ onMounted(() => {
         console.run(cmdline);
       }
     });
+
+    input.value.focus();
   }
 });
 </script>
