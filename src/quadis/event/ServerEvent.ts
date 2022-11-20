@@ -75,6 +75,7 @@ export interface PiecePayload {
 
 export interface FallingPiecePayload {
   piece: PiecePayload;
+  rotationLocked: boolean;
   rotation: number;
   x: number;
   y: number;

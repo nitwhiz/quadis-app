@@ -34,6 +34,8 @@ export default class GameContainer extends Container {
 
   private readonly fieldContainer: FieldContainer;
 
+  private rotationLocked = false;
+
   private readonly nextPieceContainer: SidePieceContainer | null = null;
 
   private readonly holdingPieceContainer: SidePieceContainer | null = null;
@@ -143,6 +145,8 @@ export default class GameContainer extends Container {
     this.roomService.on(
       this.getOwnEventType(ServerEventType.FALLING_PIECE_UPDATE),
       (event: FallingPieceUpdateEvent) => {
+        this.rotationLocked = event.payload.rotationLocked;
+
         const prediction = this.fallingPiecePredictionBuffer.shift();
 
         if (
@@ -182,8 +186,12 @@ export default class GameContainer extends Container {
 
         switch (cmd) {
           case Command.ROTATE:
-            fallingPiecePredictionResult =
-              this.fieldContainer.tryTranslateFallingPiece(1, 0, 0);
+            if (this.rotationLocked) {
+              fallingPiecePredictionResult = false;
+            } else {
+              fallingPiecePredictionResult =
+                this.fieldContainer.tryTranslateFallingPiece(1, 0, 0);
+            }
             break;
           case Command.LEFT:
             fallingPiecePredictionResult =
