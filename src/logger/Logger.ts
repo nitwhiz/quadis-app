@@ -20,15 +20,11 @@ class Logger {
   }
 
   private writeInfo(prefix: string, ...args: any[]): void {
-    if (import.meta.env.DEV) {
-      console.info(this.getFullPrefix(prefix), ...args);
-    }
+    console.info(this.getFullPrefix(prefix), ...args);
   }
 
   private writeDebug(prefix: string, ...args: any[]): void {
-    if (import.meta.env.DEV) {
-      console.debug(this.getFullPrefix(prefix), ...args);
-    }
+    console.debug(this.getFullPrefix(prefix), ...args);
   }
 
   private writeWarning(...args: any[]): void {

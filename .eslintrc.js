@@ -15,7 +15,7 @@ module.exports = {
   },
   overrides: [
     {
-      files: ['test/**/*.spec.ts'],
+      files: ['test/**/*.spec.ts', 'vite.config.ts'],
       rules: {
         'no-console': 'off',
       },

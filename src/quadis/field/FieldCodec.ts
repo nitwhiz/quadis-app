@@ -1,8 +1,7 @@
 const BITS_PER_TOKEN = 4;
-const TOKENS_PER_BYTE = 8 / BITS_PER_TOKEN;
 
 const BITS_PER_WORD = 64;
-const TOKENS_PER_WORD = (BITS_PER_WORD / 8) * TOKENS_PER_BYTE;
+const TOKENS_PER_WORD = BITS_PER_WORD / BITS_PER_TOKEN;
 
 export const encode64 = (
   data: Uint8Array,
@@ -24,7 +23,10 @@ export const encode64 = (
           BigInt.asUintN(
             BITS_PER_WORD,
             BigInt.asUintN(BITS_PER_WORD, BigInt(data[i] & 0xf)) <<
-              BigInt.asUintN(BITS_PER_WORD, BigInt(tokenIndex * 4)),
+              BigInt.asUintN(
+                BITS_PER_WORD,
+                BigInt(tokenIndex * BITS_PER_TOKEN),
+              ),
           ),
       );
 
@@ -60,8 +62,10 @@ export const decode64 = (
   const dataView = new Uint8Array(data.buffer).reverse();
 
   for (let ptr = dataView.length - 1; ptr >= 0; --ptr) {
+    // todo: optimize for general bits_per_token values, not just 4 bits per token
+
     const tokA = dataView[ptr] & 0x0f;
-    const tokB = (dataView[ptr] & 0xf0) >> 4;
+    const tokB = (dataView[ptr] & 0xf0) >> BITS_PER_TOKEN;
 
     result.unshift(tokA);
 

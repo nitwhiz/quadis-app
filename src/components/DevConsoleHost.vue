@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import Console from '../console/Console';
+import DevConsole, { ConsoleEventType } from '../console/DevConsole';
 
-const console = new Console();
+const console = new DevConsole();
 
 const logs = ref([] as string[]);
 const input = ref(null as null | HTMLInputElement);
 
 onMounted(() => {
-  console.on('log', (log: string) => {
+  console.on(ConsoleEventType.LOG, (log: string) => {
     logs.value.push(log);
 
     if (logs.value.length >= 6) {

@@ -4,7 +4,7 @@ import ColorMap from '../piece/color/ColorMap';
 import { getPieceDataXY, Piece } from '../piece/Piece';
 import { Graphics } from '@pixi/graphics';
 import { encode64 } from './FieldCodec';
-import DebugDataCollector from '../../console/DebugDataCollector';
+import DevDataCollector from '../../console/DevDataCollector';
 
 export default class FieldContainer extends DOMLinkedContainer {
   public static DEFAULT_FIELD_HEIGHT = 20;
@@ -129,7 +129,7 @@ export default class FieldContainer extends DOMLinkedContainer {
     } else {
       this.fieldData.set(data);
 
-      DebugDataCollector.setCurrentField(
+      DevDataCollector.setCurrentField(
         Array.from(
           encode64(this.fieldData, this.fieldWidth, this.fieldHeight).values(),
         )

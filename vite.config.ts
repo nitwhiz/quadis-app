@@ -1,12 +1,22 @@
 import { defineConfig } from 'vitest/config';
 import vue from '@vitejs/plugin-vue';
+import strip from '@rollup/plugin-strip';
 import eslintPlugin from 'vite-plugin-eslint';
 
-export default defineConfig(() => ({
-  plugins: [vue(), eslintPlugin()],
+export default defineConfig((env) => ({
+  plugins: [
+    env.mode === 'production'
+      ? strip({
+          include: ['src/**/*.ts'],
+          functions: ['DevDataCollector.*', '*Logger.debug', '*Logger.info'],
+        })
+      : undefined,
+    vue(),
+    eslintPlugin(),
+  ],
   server: {
     host: '0.0.0.0',
-    hmr: true,
+    hmr: false,
   },
   esbuild: {
     platform: 'browser',
@@ -15,20 +25,23 @@ export default defineConfig(() => ({
     target: ['es2020'],
     cssCodeSplit: false,
     rollupOptions: {
-      manualChunks: (id: string) => {
-        if (id.includes('node_modules')) {
-          let name = 'vendor';
+      output: {
+        entryFileNames: 'assets/quadis.main.[hash].js',
+        manualChunks: (id: string) => {
+          let name = 'quadis';
 
-          if (id.includes('@pixi')) {
-            name += '.pixi';
-          } else if (id.includes('vue')) {
-            name += '.vue';
+          if (id.includes('node_modules')) {
+            name += '.vendor';
+
+            if (id.includes('@pixi')) {
+              name += '.pixi';
+            } else if (id.includes('vue')) {
+              name += '.vue';
+            }
           }
 
           return name;
-        }
-
-        return 'index';
+        },
       },
     },
   },

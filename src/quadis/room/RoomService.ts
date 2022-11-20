@@ -15,10 +15,9 @@ import {
 import { ClientEventMap, ClientEventType } from '../event/ClientEvent';
 import { GameEventType, gameEventType } from '../event/GameEvent';
 import { PerformanceLogger, RoomLogger } from '../../logger/Logger';
-import { ConsoleEventMap } from '../event/ConsoleEvent';
 
 export default class RoomService extends EventEmitter<
-  ServerEventMap | ClientEventMap | GameEventType | ConsoleEventMap
+  ServerEventMap | ClientEventMap | GameEventType
 > {
   private readonly gameServer: string;
 
@@ -64,6 +63,10 @@ export default class RoomService extends EventEmitter<
 
   public setRoomId(roomId: string): void {
     this.roomId = roomId;
+  }
+
+  public getRoomId(): string | null {
+    return this.roomId;
   }
 
   private addHelloListener(playerName: string) {
