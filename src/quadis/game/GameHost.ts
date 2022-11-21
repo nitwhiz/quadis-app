@@ -3,6 +3,8 @@ import { Application } from '@pixi/app';
 import { GameLogger } from '../../logger/Logger';
 
 export default class GameHost {
+  private static readonly instance = new GameHost();
+
   private isInjected = false;
 
   private readonly app: Application;
@@ -17,6 +19,10 @@ export default class GameHost {
     });
 
     this.games = {};
+  }
+
+  public static getInstance(): GameHost {
+    return GameHost.instance;
   }
 
   public addGame(game: GameContainer) {

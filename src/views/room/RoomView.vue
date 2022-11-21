@@ -12,14 +12,14 @@ import {
   ScoreUpdateEvent,
   ServerEventType,
 } from '../../quadis/event/ServerEvent';
-import { useRoomService } from '../../composables/useRoomService';
 import { ClientEventType } from '../../quadis/event/ClientEvent';
 import Score from '../../quadis/score/Score';
-import { useGameHost } from '../../composables/useGameHost';
+import GameHost from '../../quadis/game/GameHost';
+import RoomService from '../../quadis/room/RoomService';
 
 const { params } = useRoute();
 const router = useRouter();
-const roomService = await useRoomService();
+const roomService = await RoomService.getInstance();
 
 roomService.setRoomId(params.roomId as string);
 
@@ -29,7 +29,7 @@ if (!roomAvailable) {
   router.push({ name: 'home' });
 }
 
-const gameHost = useGameHost();
+const gameHost = GameHost.getInstance();
 
 const { playerName, isConfirmed } = usePlayerCustomization();
 

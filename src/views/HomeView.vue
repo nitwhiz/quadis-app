@@ -3,10 +3,10 @@ import PlayerCustomization from '../components/PlayerCustomization.vue';
 
 import axios from 'axios';
 import { useRouter } from 'vue-router';
-import { useRoomService } from '../composables/useRoomService';
+import RoomService from '../quadis/room/RoomService';
 
 const router = useRouter();
-const roomService = await useRoomService();
+const roomService = await RoomService.getInstance();
 
 const handlePlayerCustomizationConfirmation = () => {
   axios.post(roomService.getUrl('http', 'rooms')).then((response) => {

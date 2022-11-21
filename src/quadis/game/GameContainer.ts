@@ -20,6 +20,7 @@ import { Container, IDestroyOptions } from '@pixi/display';
 import { Ticker, UPDATE_PRIORITY } from '@pixi/ticker';
 import { gameEventType } from '../event/GameEvent';
 import { GameLogger } from '../../logger/Logger';
+import { decode64 } from '../field/FieldCodec';
 
 interface GameDOMLinks {
   gameContainer: HTMLElement;
@@ -138,7 +139,12 @@ export default class GameContainer extends Container {
     this.roomService.on(
       this.getOwnEventType(ServerEventType.FIELD_UPDATE),
       (event: FieldUpdateEvent) => {
-        this.fieldContainer.updateField(10, 20, event.payload.data);
+        // todo(server): send field width and height, use it here, too
+        this.fieldContainer.updateField(
+          10,
+          20,
+          decode64(10, 20, event.payload.data),
+        );
       },
     );
 

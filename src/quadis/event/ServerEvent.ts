@@ -82,7 +82,7 @@ export interface FallingPiecePayload {
 }
 
 export interface FieldPayload {
-  data: number[];
+  data: string;
 }
 
 export interface ScorePayload {

@@ -1,6 +1,5 @@
 import EventEmitter from 'eventemitter3';
 import RoomService from '../quadis/room/RoomService';
-import { useRoomService } from '../composables/useRoomService';
 import DevDataCollector from './DevDataCollector';
 import axios from 'axios';
 
@@ -24,7 +23,9 @@ export default class DevConsole extends EventEmitter<ConsoleEventMap> {
   constructor() {
     super();
 
-    useRoomService().then((roomService) => (this.roomService = roomService));
+    RoomService.getInstance().then(
+      (roomService) => (this.roomService = roomService),
+    );
   }
 
   public run(cmdline: string): void {

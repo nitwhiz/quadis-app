@@ -28,10 +28,10 @@ export default class FieldContainer extends DOMLinkedContainer {
 
     this.blockSize = blockSize;
 
-    this.fieldData = new Uint8Array(0);
-
     this.fieldWidth = FieldContainer.DEFAULT_FIELD_WIDTH;
     this.fieldHeight = FieldContainer.DEFAULT_FIELD_HEIGHT;
+
+    this.fieldData = new Uint8Array(this.fieldWidth * this.fieldHeight);
 
     this.fallingPieceContainer = new PieceContainer(this.blockSize);
 
@@ -114,10 +114,10 @@ export default class FieldContainer extends DOMLinkedContainer {
   }
 
   public updateField(width: number, height: number, data: number[]): void {
-    this.fieldWidth = width;
-    this.fieldHeight = height;
+    if (this.fieldWidth !== width || this.fieldHeight !== height) {
+      this.fieldWidth = width;
+      this.fieldHeight = height;
 
-    if (this.fieldData.length !== this.fieldWidth * this.fieldHeight) {
       this.fieldData = new Uint8Array(data);
 
       this.setDOMDimensions(

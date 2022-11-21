@@ -2,14 +2,14 @@
 import { onMounted, onUnmounted, PropType, ref } from 'vue';
 import Player from '../quadis/player/Player';
 import GameContainer from '../quadis/game/GameContainer';
-import { useRoomService } from '../composables/useRoomService';
-import { useGameHost } from '../composables/useGameHost';
 import { DefaultLogger } from '../logger/Logger';
 import { ItemUpdateEvent, ServerEventType } from '../quadis/event/ServerEvent';
 import { gameEventType } from '../quadis/event/GameEvent';
+import GameHost from '../quadis/game/GameHost';
+import RoomService from '../quadis/room/RoomService';
 
-const roomService = await useRoomService();
-const gameHost = useGameHost();
+const roomService = await RoomService.getInstance();
+const gameHost = GameHost.getInstance();
 
 const props = defineProps({
   isMain: {
@@ -37,8 +37,16 @@ const currentItem = ref(null as string | null);
 
 const getCurrentItemUrl = (): string | undefined => {
   if (currentItem.value) {
-    return new URL(`../assets/items/${currentItem.value}.png`, import.meta.url)
-      .href;
+    if (
+      ['lock_rotation', 'only_i_pieces', 'tornado'].includes(currentItem.value)
+    ) {
+      return new URL(
+        `../assets/items/${currentItem.value}.png`,
+        import.meta.url,
+      ).href;
+    }
+
+    return new URL(`../assets/items/unknown.png`, import.meta.url).href;
   }
 
   return undefined;
@@ -92,7 +100,7 @@ onUnmounted(() => {
       <div class="side-label">HOLD</div>
       <div ref="holdingPieceWrapper" class="holding-piece"></div>
       <div class="side-label">ITEM</div>
-      <div class="item">
+      <div class="item" :class="currentItem ? 'available' : undefined">
         <img v-if="currentItem" :src="getCurrentItemUrl()" alt="current item" />
       </div>
     </div>
@@ -152,6 +160,10 @@ onUnmounted(() => {
 
     width: 68px;
     height: 68px;
+
+    &.available {
+      background-color: #9c9c9c;
+    }
 
     img {
       width: 56px;

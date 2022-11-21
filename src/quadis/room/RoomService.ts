@@ -15,10 +15,13 @@ import {
 import { ClientEventMap, ClientEventType } from '../event/ClientEvent';
 import { GameEventType, gameEventType } from '../event/GameEvent';
 import { PerformanceLogger, RoomLogger } from '../../logger/Logger';
+import DevDataCollector from '../../console/DevDataCollector';
 
 export default class RoomService extends EventEmitter<
   ServerEventMap | ClientEventMap | GameEventType
 > {
+  private static instance: Promise<RoomService> | null;
+
   private readonly gameServer: string;
 
   private readonly tls: boolean;
@@ -51,6 +54,30 @@ export default class RoomService extends EventEmitter<
     this.mainPlayer = null;
 
     this.mainGameRunning = false;
+  }
+
+  public static getInstance(): Promise<RoomService> {
+    if (!RoomService.instance) {
+      RoomService.instance = axios
+        .get<{
+          gameServer: string;
+          tls: boolean;
+        }>('/env.json')
+        .then((response) => {
+          const gameServer = response.data.gameServer;
+          const tls = response.data.tls;
+
+          RoomLogger.debug(
+            `creating RoomService for ${gameServer} (tls: ${
+              tls ? 'yes' : 'no'
+            })`,
+          );
+
+          return new RoomService(gameServer, tls);
+        });
+    }
+
+    return RoomService.instance;
   }
 
   public getMainPlayer() {
@@ -182,6 +209,10 @@ export default class RoomService extends EventEmitter<
     this.socketConn?.addEventListener(
       'message',
       (msgEvent: MessageEvent<string>) => {
+        DevDataCollector.addBytesReceived(
+          new TextEncoder().encode(msgEvent.data).length,
+        );
+
         try {
           const event = JSON.parse(msgEvent.data) as ServerEvent;
 
