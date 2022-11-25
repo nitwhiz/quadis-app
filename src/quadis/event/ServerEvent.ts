@@ -1,4 +1,5 @@
 import { Piece } from '../piece/Piece';
+import { ItemType } from '../item/Item';
 
 export const enum ServerEventType {
   HELLO = 'hello',
@@ -16,6 +17,7 @@ export const enum ServerEventType {
   GAME_OVER = 'game_over',
   ROOM_SCORES = 'room_scores',
   ITEM_UPDATE = 'item_update',
+  ITEM_AFFECTION_UPDATE = 'item_affection_update',
 }
 
 export const enum ServerEventOrigin {
@@ -108,7 +110,7 @@ export interface EventWindowPayload {
 }
 
 export interface ItemPayload {
-  type: string | null;
+  type: ItemType;
 }
 
 // room events
@@ -139,6 +141,10 @@ export interface TargetsUpdateEvent extends RoomEvent<TargetsPayload> {
 
 export interface RoomScoresEvent extends RoomEvent<ScoresPayload> {
   type: ServerEventType.ROOM_SCORES;
+}
+
+export interface ItemAffectionUpdateEvent extends RoomEvent<ItemPayload> {
+  type: ServerEventType.ITEM_AFFECTION_UPDATE;
 }
 
 // game events
@@ -194,6 +200,7 @@ export interface ServerEventMap {
   [ServerEventType.WINDOW]: EventWindowEvent;
   [ServerEventType.ROOM_SCORES]: RoomScoresEvent;
   [ServerEventType.ITEM_UPDATE]: ItemUpdateEvent;
+  [ServerEventType.ITEM_AFFECTION_UPDATE]: ItemAffectionUpdateEvent;
 }
 
 export type ServerEvent = ServerEventMap[keyof ServerEventMap];

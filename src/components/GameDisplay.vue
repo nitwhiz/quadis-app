@@ -3,10 +3,15 @@ import { onMounted, onUnmounted, PropType, ref } from 'vue';
 import Player from '../quadis/player/Player';
 import GameContainer from '../quadis/game/GameContainer';
 import { DefaultLogger } from '../logger/Logger';
-import { ItemUpdateEvent, ServerEventType } from '../quadis/event/ServerEvent';
+import {
+  ItemAffectionUpdateEvent,
+  ItemUpdateEvent,
+  ServerEventType,
+} from '../quadis/event/ServerEvent';
 import { gameEventType } from '../quadis/event/GameEvent';
 import GameHost from '../quadis/game/GameHost';
 import RoomService from '../quadis/room/RoomService';
+import { ItemType } from '../quadis/item/Item';
 
 const roomService = await RoomService.getInstance();
 const gameHost = GameHost.getInstance();
@@ -33,23 +38,23 @@ const holdingPieceWrapper = ref<HTMLDivElement | null>(null);
 const score = ref(props.player.score);
 let game: GameContainer | null = null;
 
-const currentItem = ref(null as string | null);
+const currentItem = ref(null as ItemType | null);
+const affectingItem = ref(ItemType.NONE);
 
-const getCurrentItemUrl = (): string | undefined => {
-  if (currentItem.value) {
-    if (
-      ['lock_rotation', 'only_i_pieces', 'tornado'].includes(currentItem.value)
-    ) {
-      return new URL(
-        `../assets/items/${currentItem.value}.png`,
-        import.meta.url,
-      ).href;
-    }
-
-    return new URL(`../assets/items/unknown.png`, import.meta.url).href;
+const getItemUrl = (itemType: ItemType | null): string | undefined => {
+  if (itemType) {
+    return new URL(`../assets/items/${itemType}.png`, import.meta.url).href;
   }
 
   return undefined;
+};
+
+const getCurrentItemUrl = (): string | undefined => {
+  return getItemUrl(currentItem.value);
+};
+
+const getAffectingItemUrl = (): string | undefined => {
+  return getItemUrl(affectingItem.value);
 };
 
 onMounted(() => {
@@ -69,10 +74,19 @@ onMounted(() => {
 
   game = gameContainer;
 
-  roomService.on(
-    gameEventType(ServerEventType.ITEM_UPDATE, game.getId()),
-    (event: ItemUpdateEvent) => (currentItem.value = event.payload.type),
-  );
+  if (props.player.isMain) {
+    roomService.on(
+      gameEventType(ServerEventType.ITEM_UPDATE, game.getId()),
+      (event: ItemUpdateEvent) => (currentItem.value = event.payload.type),
+    );
+
+    roomService.on(
+      gameEventType(ServerEventType.ITEM_AFFECTION_UPDATE, game.getId()),
+      (event: ItemAffectionUpdateEvent) => {
+        affectingItem.value = event.payload.type;
+      },
+    );
+  }
 });
 
 onUnmounted(() => {
@@ -104,6 +118,12 @@ onUnmounted(() => {
         <img v-if="currentItem" :src="getCurrentItemUrl()" alt="current item" />
       </div>
     </div>
+    <div
+      v-if="isMain && affectingItem !== ItemType.NONE"
+      class="affecting-item"
+    >
+      <img :src="getAffectingItemUrl()" alt="affecting item" />
+    </div>
   </div>
 </template>
 
@@ -117,6 +137,8 @@ onUnmounted(() => {
 
   border: 3px solid transparent;
   border-radius: 3px;
+
+  position: relative;
 
   &.is-target {
     border-color: rgba(255, 0, 0, 0.5);
@@ -184,6 +206,47 @@ onUnmounted(() => {
 
     &:first-child {
       margin-top: 52px;
+    }
+  }
+
+  @keyframes pulse {
+    0% {
+      scale: 0.9;
+    }
+
+    50% {
+      scale: 1.1;
+    }
+
+    100% {
+      scale: 0.9;
+    }
+  }
+
+  .affecting-item {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+
+    background-color: #444;
+    transform: translate(30%, 30%) rotate(20deg);
+
+    animation-name: pulse;
+    animation-timing-function: linear;
+    animation-duration: 1s;
+    animation-iteration-count: infinite;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    width: 68px;
+    height: 68px;
+
+    img {
+      width: 56px;
+      height: auto;
+      image-rendering: pixelated;
     }
   }
 }
