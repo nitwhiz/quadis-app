@@ -20,7 +20,7 @@ import { Container, IDestroyOptions } from '@pixi/display';
 import { Ticker, UPDATE_PRIORITY } from '@pixi/ticker';
 import { gameEventType } from '../event/GameEvent';
 import { GameLogger } from '../../logger/Logger';
-import { decode64 } from '../field/FieldCodec';
+import { codec64 } from '../field/codec/Codec64';
 
 interface GameDOMLinks {
   gameContainer: HTMLElement;
@@ -143,7 +143,7 @@ export default class GameContainer extends Container {
         this.fieldContainer.updateField(
           10,
           20,
-          decode64(10, 20, event.payload.data),
+          codec64.decode(10, 20, event.payload.data),
         );
       },
     );

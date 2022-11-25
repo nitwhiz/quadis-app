@@ -100,3 +100,5 @@ export const getPieceDataXY = (
 export const BLOCK_SIZE_SIDE_PIECE = 12;
 export const BLOCK_SIZE_MAIN_FIELD = 24;
 export const BLOCK_SIZE_OPPONENT_FIELD = 10;
+
+export const MAX_TOKEN = Number(Piece.B);

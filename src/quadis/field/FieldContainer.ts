@@ -3,7 +3,7 @@ import { PieceContainer } from '../piece/PieceContainer';
 import ColorMap from '../piece/color/ColorMap';
 import { getPieceDataXY, Piece } from '../piece/Piece';
 import { Graphics } from '@pixi/graphics';
-import { encode64 } from './FieldCodec';
+import { codec64 } from './codec/Codec64';
 import DevDataCollector from '../../console/DevDataCollector';
 
 export default class FieldContainer extends DOMLinkedContainer {
@@ -131,10 +131,10 @@ export default class FieldContainer extends DOMLinkedContainer {
 
       DevDataCollector.setCurrentField(
         Array.from(
-          encode64(this.fieldData, this.fieldWidth, this.fieldHeight).values(),
-        )
-          .map((bi) => bi.padStart(16, '0'))
-          .join(' '),
+          codec64
+            .encode(this.fieldData, this.fieldWidth, this.fieldHeight)
+            .values(),
+        ).join(' '),
       );
     }
 
