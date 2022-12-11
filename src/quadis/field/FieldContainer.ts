@@ -149,9 +149,7 @@ export default class FieldContainer extends DOMLinkedContainer {
         const blockData = this.fieldData[y * this.fieldWidth + x];
 
         if (blockData) {
-          this.fieldGraphics.beginFill(
-            ColorMap.DEFAULT_COLOR_MAP.getColor(blockData),
-          );
+          this.fieldGraphics.beginFill(ColorMap.CLASSIC.getColor(blockData));
 
           this.fieldGraphics.drawRect(
             x * this.blockSize,

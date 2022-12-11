@@ -64,7 +64,7 @@ export class PieceContainer extends Container {
           const blockData = getPieceDataXY(piece, rot, x, y);
 
           if (blockData) {
-            g.beginFill(ColorMap.DEFAULT_COLOR_MAP.getColor(blockData));
+            g.beginFill(ColorMap.CLASSIC.getColor(blockData));
             g.drawRect(x * blockSize, y * blockSize, blockSize, blockSize);
           }
         }

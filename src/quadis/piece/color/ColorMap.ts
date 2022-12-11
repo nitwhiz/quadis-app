@@ -1,14 +1,14 @@
 import { Piece } from '../Piece';
 
 export default class ColorMap {
-  public static readonly DEFAULT_COLOR_MAP = new ColorMap({
-    [Piece.I]: 0x0caee8,
-    [Piece.O]: 0xf2f200,
-    [Piece.L]: 0xffce0d,
-    [Piece.J]: 0xebaf0c,
-    [Piece.S]: 0x0cb14a,
-    [Piece.T]: 0xac0ce8,
-    [Piece.Z]: 0xe82c0c,
+  public static readonly CLASSIC = new ColorMap({
+    [Piece.I]: 0x00f0f0,
+    [Piece.O]: 0xf0f000,
+    [Piece.L]: 0xf0a000,
+    [Piece.J]: 0x0000f0,
+    [Piece.S]: 0x00f000,
+    [Piece.T]: 0xa000f0,
+    [Piece.Z]: 0xf00000,
     [Piece.B]: 0x333333,
   });
 
