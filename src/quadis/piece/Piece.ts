@@ -16,6 +16,7 @@ const J = Piece.J;
 const S = Piece.S;
 const T = Piece.T;
 const Z = Piece.Z;
+const B = Piece.B;
 
 const pieceDataI = [
   new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, I, I, I, I, 0, 0, 0, 0]),
@@ -61,7 +62,11 @@ const pieceDataZ = [
   new Uint8Array([0, 0, Z, 0, 0, Z, Z, 0, 0, Z, 0, 0, 0, 0, 0, 0]),
 ];
 
-export const PieceDataTable: Record<Piece, Uint8Array[] | null> = {
+const pieceDataB = [
+  new Uint8Array([B, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+];
+
+export const PieceDataTable: Record<Piece, Uint8Array[]> = {
   [Piece.I]: pieceDataI,
   [Piece.O]: pieceDataO,
   [Piece.L]: pieceDataL,
@@ -69,7 +74,7 @@ export const PieceDataTable: Record<Piece, Uint8Array[] | null> = {
   [Piece.S]: pieceDataS,
   [Piece.T]: pieceDataT,
   [Piece.Z]: pieceDataZ,
-  [Piece.B]: null,
+  [Piece.B]: pieceDataB,
 };
 
 export const getFaceCount = (piece: Piece): number => {

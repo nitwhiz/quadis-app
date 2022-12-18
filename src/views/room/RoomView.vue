@@ -7,10 +7,10 @@ import usePlayerCustomization from '../../composables/usePlayerCustomization';
 import Player from '../../quadis/player/Player';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import {
-  TargetsUpdateEvent,
   RoomScoresEvent,
   ScoreUpdateEvent,
   ServerEventType,
+  TargetsUpdateEvent,
 } from '../../quadis/event/ServerEvent';
 import { ClientEventType } from '../../quadis/event/ClientEvent';
 import Score from '../../quadis/score/Score';

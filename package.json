@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@pixi/app": "^7.0.4",
+    "@pixi/assets": "^7.0.4",
     "@pixi/constants": "^7.0.4",
     "@pixi/core": "^7.0.4",
     "@pixi/display": "^7.0.4",
@@ -16,6 +17,7 @@
     "@pixi/math": "^7.0.4",
     "@pixi/runner": "^7.0.4",
     "@pixi/settings": "^7.0.4",
+    "@pixi/sprite": "^7.0.4",
     "@pixi/ticker": "^7.0.4",
     "@pixi/utils": "^7.0.4",
     "axios": "^1.2.1",

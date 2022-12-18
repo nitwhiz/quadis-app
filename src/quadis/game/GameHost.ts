@@ -25,6 +25,10 @@ export default class GameHost {
     return GameHost.instance;
   }
 
+  public getRenderer() {
+    return this.app.renderer;
+  }
+
   public addGame(game: GameContainer) {
     this.app.stage.addChild(game);
 

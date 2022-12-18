@@ -2,6 +2,7 @@ lockfileVersion: 5.4
 
 specifiers:
   '@pixi/app': ^7.0.4
+  '@pixi/assets': ^7.0.4
   '@pixi/constants': ^7.0.4
   '@pixi/core': ^7.0.4
   '@pixi/display': ^7.0.4
@@ -9,6 +10,7 @@ specifiers:
   '@pixi/math': ^7.0.4
   '@pixi/runner': ^7.0.4
   '@pixi/settings': ^7.0.4
+  '@pixi/sprite': ^7.0.4
   '@pixi/ticker': ^7.0.4
   '@pixi/utils': ^7.0.4
   '@rollup/plugin-strip': ^3.0.1
@@ -32,6 +34,7 @@ specifiers:
 
 dependencies:
   '@pixi/app': 7.0.4
+  '@pixi/assets': 7.0.4
   '@pixi/constants': 7.0.4
   '@pixi/core': 7.0.4
   '@pixi/display': 7.0.4
@@ -39,6 +42,7 @@ dependencies:
   '@pixi/math': 7.0.4
   '@pixi/runner': 7.0.4
   '@pixi/settings': 7.0.4
+  '@pixi/sprite': 7.0.4
   '@pixi/ticker': 7.0.4
   '@pixi/utils': 7.0.4
   axios: 1.2.1
@@ -167,6 +171,12 @@ packages:
     resolution: {integrity: sha512-HXQHcLFNKm1d1IY0i2VigwgVxLO0ODS29TPhQv4m1q/w7FbgW2dWa0oDQS0ei0Bl/tlExd296YSrGfnbfw4Ypw==}
     dev: false
 
+  /@pixi/assets/7.0.4:
+    resolution: {integrity: sha512-SsF8oVY3FTBP5sy2KkrmYhlN3NNQSKdo+pttqWzuNA0bfl431q/6dytSYTWOHkKwhk5n+eAIZflQVuBht4X4aA==}
+    dependencies:
+      '@types/css-font-loading-module': 0.0.7
+    dev: false
+
   /@pixi/constants/7.0.4:
     resolution: {integrity: sha512-HS8fvDZ4jn7jeEPeYfrB0bPSLW6yfVWxQwXUX6BAQOhpEZXlPpa3uKwl+wxhVh+9OGXBvlMcbxZTPEDMdB6xJQ==}
     dev: false
@@ -209,6 +219,10 @@ packages:
     dependencies:
       '@pixi/constants': 7.0.4
       '@types/css-font-loading-module': 0.0.7
+    dev: false
+
+  /@pixi/sprite/7.0.4:
+    resolution: {integrity: sha512-Bj6pswIKfHdk5q0G14cBZF8XXyf0zHgUxpp53rD2+tDKf4Xm2/Uoy5p0Z1RZD6IzaFp44pKA21LYOPJrNxc1MA==}
     dev: false
 
   /@pixi/ticker/7.0.4:

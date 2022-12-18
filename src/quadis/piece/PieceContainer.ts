@@ -1,21 +1,39 @@
-import { clampRotation, getFaceCount, getPieceDataXY, Piece } from './Piece';
-import ColorMap from './color/ColorMap';
-import { Graphics } from '@pixi/graphics';
+import {
+  BLOCK_SIZE_MAIN_FIELD,
+  BLOCK_SIZE_OPPONENT_FIELD,
+  BLOCK_SIZE_SIDE_PIECE,
+  clampRotation,
+  Piece,
+} from './Piece';
 import { Container, IDestroyOptions } from '@pixi/display';
+import { Sprite } from '@pixi/sprite';
+import PieceSpriteFactory, { PieceSpritesRegistry } from './PieceSpriteFactory';
+import GameHost from '../game/GameHost';
+import { Texture } from '@pixi/core';
 
 export class PieceContainer extends Container {
-  private static preBakedPieceFaceGraphicsByBlockSize: Record<
-    number,
-    Record<Piece, Graphics[]>
-  > = {};
+  private static pieceSpritesRegistry: PieceSpritesRegistry = {};
 
   private currentPiece: Piece | null;
 
   private currentRotation: number;
 
-  private readonly pieceFaceGraphics: Record<Piece, Graphics[]>;
+  private readonly pieceFaceSprites: Record<Piece, Sprite[]>;
 
   private readonly faceContainer: Container;
+
+  public static bakePieceSprites(blockTexture: Texture): void {
+    const pieceSpriteFactory = new PieceSpriteFactory(
+      blockTexture,
+      GameHost.getInstance().getRenderer(),
+    );
+
+    pieceSpriteFactory.bake(BLOCK_SIZE_MAIN_FIELD);
+    pieceSpriteFactory.bake(BLOCK_SIZE_SIDE_PIECE);
+    pieceSpriteFactory.bake(BLOCK_SIZE_OPPONENT_FIELD);
+
+    PieceContainer.pieceSpritesRegistry = pieceSpriteFactory.getRegistry();
+  }
 
   constructor(blockSize: number) {
     super();
@@ -23,60 +41,16 @@ export class PieceContainer extends Container {
     this.currentPiece = null;
     this.currentRotation = 0;
 
-    if (PieceContainer.preBakedPieceFaceGraphicsByBlockSize[blockSize]) {
-      this.pieceFaceGraphics =
-        PieceContainer.preBakedPieceFaceGraphicsByBlockSize[blockSize];
+    if (PieceContainer.pieceSpritesRegistry[blockSize]) {
+      this.pieceFaceSprites = PieceContainer.pieceSpritesRegistry[blockSize];
     } else {
-      const pieceFaceGraphics = {
-        [Piece.I]: PieceContainer.generateFaceGraphics(Piece.I, blockSize),
-        [Piece.O]: PieceContainer.generateFaceGraphics(Piece.O, blockSize),
-        [Piece.L]: PieceContainer.generateFaceGraphics(Piece.L, blockSize),
-        [Piece.J]: PieceContainer.generateFaceGraphics(Piece.J, blockSize),
-        [Piece.S]: PieceContainer.generateFaceGraphics(Piece.S, blockSize),
-        [Piece.T]: PieceContainer.generateFaceGraphics(Piece.T, blockSize),
-        [Piece.Z]: PieceContainer.generateFaceGraphics(Piece.Z, blockSize),
-        [Piece.B]: PieceContainer.generateFaceGraphics(Piece.B, blockSize),
-      };
-
-      this.pieceFaceGraphics = pieceFaceGraphics;
-      PieceContainer.preBakedPieceFaceGraphicsByBlockSize[blockSize] =
-        pieceFaceGraphics;
+      throw new Error(`no piece face graphics for block size ${blockSize}`);
     }
 
-    this.faceContainer = new Container<Graphics>();
+    this.faceContainer = new Container<Sprite>();
     this.faceContainer.position.set(0, 0);
 
     this.addChild(this.faceContainer);
-  }
-
-  private static generateFaceGraphics(
-    piece: Piece,
-    blockSize: number,
-  ): Graphics[] {
-    const faceCount = getFaceCount(piece);
-    const result: Graphics[] = [];
-
-    for (let rot = 0; rot < faceCount; rot++) {
-      const g = new Graphics();
-
-      for (let x = 0; x < 4; ++x) {
-        for (let y = 0; y < 4; ++y) {
-          const blockData = getPieceDataXY(piece, rot, x, y);
-
-          if (blockData) {
-            g.beginFill(ColorMap.CLASSIC.getColor(blockData));
-            g.drawRect(x * blockSize, y * blockSize, blockSize, blockSize);
-          }
-        }
-      }
-
-      g.position.set(0, 0);
-      g.visible = true;
-
-      result.push(g);
-    }
-
-    return result;
   }
 
   public get piece(): Piece | null {
@@ -89,10 +63,10 @@ export class PieceContainer extends Container {
     }
 
     if (this.currentPiece !== null) {
-      const currentPieceGraphics =
-        this.pieceFaceGraphics[this.currentPiece][this.currentRotation];
+      const currentPieceSprite =
+        this.pieceFaceSprites[this.currentPiece][this.currentRotation];
 
-      if (currentPieceGraphics) {
+      if (currentPieceSprite) {
         this.faceContainer.removeChildren();
       }
     }
@@ -108,20 +82,20 @@ export class PieceContainer extends Container {
 
   public set rotation(angle: number) {
     if (this.currentPiece !== null) {
-      const currentPieceGraphics =
-        this.pieceFaceGraphics[this.currentPiece][this.currentRotation];
+      const currentPieceSprite =
+        this.pieceFaceSprites[this.currentPiece][this.currentRotation];
 
-      if (currentPieceGraphics) {
+      if (currentPieceSprite) {
         this.faceContainer.removeChildren();
       }
 
       const clampedRotation = clampRotation(this.currentPiece, angle);
 
-      const nextPieceGraphics =
-        this.pieceFaceGraphics[this.currentPiece][clampedRotation];
+      const nextPieceSprite =
+        this.pieceFaceSprites[this.currentPiece][clampedRotation];
 
-      if (nextPieceGraphics) {
-        this.faceContainer.addChild(nextPieceGraphics.clone());
+      if (nextPieceSprite) {
+        this.faceContainer.addChild(nextPieceSprite);
       }
 
       this.currentRotation = clampedRotation;
