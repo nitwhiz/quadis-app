@@ -1,12 +1,23 @@
 import DOMLinkedContainer from '../common/DOMLinkedContainer';
 import { PieceContainer } from '../piece/PieceContainer';
-import ColorMap from '../piece/color/ColorMap';
-import { getPieceDataXY, Piece } from '../piece/Piece';
-import { Graphics } from '@pixi/graphics';
+import {
+  BLOCK_SIZE_MAIN_FIELD,
+  BLOCK_SIZE_OPPONENT_FIELD,
+  getPieceDataXY,
+  Piece,
+} from '../piece/Piece';
 import { codec64 } from './codec/Codec64';
 import DevDataCollector from '../../console/DevDataCollector';
+import { RenderTexture, Texture } from '@pixi/core';
+import BlockTextureFactory, {
+  BlockTextureRegistry,
+} from '../piece/BlockTextureFactory';
+import GameHost from '../game/GameHost';
+import { Sprite } from '@pixi/sprite';
 
 export default class FieldContainer extends DOMLinkedContainer {
+  private static blockTextureRegistry: BlockTextureRegistry = {};
+
   public static DEFAULT_FIELD_HEIGHT = 20;
 
   public static DEFAULT_FIELD_WIDTH = 10;
@@ -21,10 +32,18 @@ export default class FieldContainer extends DOMLinkedContainer {
 
   private readonly fallingPieceContainer: PieceContainer;
 
-  private readonly fieldGraphics: Graphics;
+  private readonly blockTextures: Record<Piece, Texture>;
+
+  private readonly fieldTexture: RenderTexture;
 
   public constructor(domElement: HTMLElement, blockSize: number) {
     super(domElement);
+
+    if (FieldContainer.blockTextureRegistry[blockSize]) {
+      this.blockTextures = FieldContainer.blockTextureRegistry[blockSize];
+    } else {
+      throw new Error(`no block sprites for block size ${blockSize}`);
+    }
 
     this.blockSize = blockSize;
 
@@ -38,12 +57,16 @@ export default class FieldContainer extends DOMLinkedContainer {
     this.fallingPieceContainer.x = 0;
     this.fallingPieceContainer.y = 0;
 
-    this.fieldGraphics = new Graphics();
+    this.fieldTexture = RenderTexture.create({
+      width: this.fieldWidth * this.blockSize,
+      height: this.fieldHeight * this.blockSize,
+    });
 
-    this.fieldGraphics.x = 0;
-    this.fieldGraphics.y = 0;
+    const fieldSprite = new Sprite(this.fieldTexture);
 
-    this.addChild(this.fieldGraphics, this.fallingPieceContainer);
+    fieldSprite.position.set(0, 0);
+
+    this.addChild(fieldSprite, this.fallingPieceContainer);
 
     this.setDOMDimensions(
       this.blockSize * this.fieldWidth,
@@ -51,6 +74,18 @@ export default class FieldContainer extends DOMLinkedContainer {
     );
 
     this.update(true);
+  }
+
+  public static bakeBlockTextures(blockTexture: Texture): void {
+    const blockTextureFactory = new BlockTextureFactory(
+      blockTexture,
+      GameHost.getInstance().getRenderer(),
+    );
+
+    blockTextureFactory.bake(BLOCK_SIZE_MAIN_FIELD);
+    blockTextureFactory.bake(BLOCK_SIZE_OPPONENT_FIELD);
+
+    FieldContainer.blockTextureRegistry = blockTextureFactory.getRegistry();
   }
 
   public tryTranslateFallingPiece(dr: number, dx: number, dy: number): boolean {
@@ -138,41 +173,53 @@ export default class FieldContainer extends DOMLinkedContainer {
       );
     }
 
-    this.updateFieldGraphics();
+    this.updateFieldRenderTexture();
   }
 
-  private updateFieldGraphics(): void {
-    this.fieldGraphics.clear();
+  private clearFieldRenderTexture(): void {
+    // todo: there seems no real way to clear RenderTextures ...
+    const blockSprite = new Sprite(this.blockTextures[Piece.B]);
+
+    blockSprite.position.set(-this.blockSize, -this.blockSize);
+
+    GameHost.getInstance().getRenderer().render(blockSprite, {
+      renderTexture: this.fieldTexture,
+      clear: true,
+    });
+
+    blockSprite.destroy({
+      texture: false,
+      baseTexture: true,
+      children: true,
+    });
+  }
+
+  private updateFieldRenderTexture(): void {
+    this.clearFieldRenderTexture();
 
     for (let x = 0; x < this.fieldWidth; ++x) {
       for (let y = 0; y < this.fieldHeight; ++y) {
         const blockData = this.fieldData[y * this.fieldWidth + x];
 
         if (blockData) {
-          this.fieldGraphics.beginFill(ColorMap.CLASSIC.getColor(blockData));
-
-          this.fieldGraphics.drawRect(
-            x * this.blockSize,
-            y * this.blockSize,
-            this.blockSize,
-            this.blockSize,
+          const blockSprite = new Sprite(
+            this.blockTextures[blockData as Piece],
           );
+
+          blockSprite.position.set(x * this.blockSize, y * this.blockSize);
+
+          GameHost.getInstance().getRenderer().render(blockSprite, {
+            renderTexture: this.fieldTexture,
+            clear: false,
+          });
+
+          blockSprite.destroy({
+            texture: false,
+            baseTexture: true,
+            children: true,
+          });
         }
       }
-    }
-
-    this.fieldGraphics.lineStyle(1, 0xffffff, 0.1);
-
-    for (let y = 1; y < this.fieldHeight; ++y) {
-      this.fieldGraphics
-        .moveTo(0, y * this.blockSize)
-        .lineTo(this.fieldWidth * this.blockSize, y * this.blockSize);
-    }
-
-    for (let x = 1; x < this.fieldWidth; ++x) {
-      this.fieldGraphics
-        .moveTo(x * this.blockSize, 0)
-        .lineTo(x * this.blockSize, this.fieldHeight * this.blockSize);
     }
   }
 
@@ -181,6 +228,6 @@ export default class FieldContainer extends DOMLinkedContainer {
 
     this.fieldData.fill(0);
 
-    this.updateFieldGraphics();
+    this.updateFieldRenderTexture();
   }
 }

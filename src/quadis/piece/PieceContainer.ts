@@ -7,12 +7,12 @@ import {
 } from './Piece';
 import { Container, IDestroyOptions } from '@pixi/display';
 import { Sprite } from '@pixi/sprite';
-import PieceSpriteFactory, { PieceSpritesRegistry } from './PieceSpriteFactory';
+import PieceSpriteFactory, { PieceSpriteRegistry } from './PieceSpriteFactory';
 import GameHost from '../game/GameHost';
 import { Texture } from '@pixi/core';
 
 export class PieceContainer extends Container {
-  private static pieceSpritesRegistry: PieceSpritesRegistry = {};
+  private static pieceSpriteRegistry: PieceSpriteRegistry = {};
 
   private currentPiece: Piece | null;
 
@@ -32,7 +32,7 @@ export class PieceContainer extends Container {
     pieceSpriteFactory.bake(BLOCK_SIZE_SIDE_PIECE);
     pieceSpriteFactory.bake(BLOCK_SIZE_OPPONENT_FIELD);
 
-    PieceContainer.pieceSpritesRegistry = pieceSpriteFactory.getRegistry();
+    PieceContainer.pieceSpriteRegistry = pieceSpriteFactory.getRegistry();
   }
 
   constructor(blockSize: number) {
@@ -41,10 +41,10 @@ export class PieceContainer extends Container {
     this.currentPiece = null;
     this.currentRotation = 0;
 
-    if (PieceContainer.pieceSpritesRegistry[blockSize]) {
-      this.pieceFaceSprites = PieceContainer.pieceSpritesRegistry[blockSize];
+    if (PieceContainer.pieceSpriteRegistry[blockSize]) {
+      this.pieceFaceSprites = PieceContainer.pieceSpriteRegistry[blockSize];
     } else {
-      throw new Error(`no piece face graphics for block size ${blockSize}`);
+      throw new Error(`no piece face sprites for block size ${blockSize}`);
     }
 
     this.faceContainer = new Container<Sprite>();

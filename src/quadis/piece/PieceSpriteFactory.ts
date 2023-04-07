@@ -4,12 +4,12 @@ import { Sprite } from '@pixi/sprite';
 import { IRenderer } from '@pixi/core/lib/IRenderer';
 import ColorMap from './color/ColorMap';
 
-export interface PieceSpritesRegistry {
+export interface PieceSpriteRegistry {
   [blockSize: number]: Record<Piece, Sprite[]>;
 }
 
 export default class PieceSpriteFactory {
-  private readonly registry: PieceSpritesRegistry = {};
+  private readonly registry: PieceSpriteRegistry = {};
 
   constructor(
     private readonly blockTexture: Texture,
@@ -29,7 +29,7 @@ export default class PieceSpriteFactory {
     };
   }
 
-  public getRegistry(): PieceSpritesRegistry {
+  public getRegistry(): PieceSpriteRegistry {
     return this.registry;
   }
 
@@ -39,6 +39,8 @@ export default class PieceSpriteFactory {
     const sprites: Sprite[] = [];
 
     const faceCount = getFaceCount(piece);
+
+    // todo: this should use BlockSpriteFactory
     const blockSprite = new Sprite(this.blockTexture);
 
     blockSprite.scale.set(scale);

@@ -4,11 +4,13 @@ import GameHost from '../quadis/game/GameHost';
 import { Assets } from '@pixi/assets';
 import { PieceContainer } from '../quadis/piece/PieceContainer';
 import { Texture } from '@pixi/core';
+import FieldContainer from '../quadis/field/FieldContainer';
 
 const blockTextureUrl = new URL(`../assets/block.png`, import.meta.url).href;
 const blockTexture = (await Assets.load(blockTextureUrl)) as Texture;
 
 PieceContainer.bakePieceSprites(blockTexture);
+FieldContainer.bakeBlockTextures(blockTexture);
 
 onMounted(() => {
   GameHost.getInstance().injectApp();
