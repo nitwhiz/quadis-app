@@ -1,8 +1,8 @@
 import { createApp } from 'vue';
 import App from './App.vue';
 import router from './router';
-import { SCALE_MODES, settings } from '@pixi/core';
+import { BaseTexture, SCALE_MODES } from '@pixi/core';
 
-settings.SCALE_MODE = SCALE_MODES.NEAREST;
+BaseTexture.defaultOptions.scaleMode = SCALE_MODES.NEAREST;
 
 createApp(App).use(router).mount('#app');
