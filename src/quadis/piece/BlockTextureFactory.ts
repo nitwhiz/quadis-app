@@ -1,4 +1,4 @@
-import { getFaceCount, Piece } from './Piece';
+import { Piece } from './Piece';
 import { Sprite } from '@pixi/sprite';
 import { RenderTexture, Texture } from '@pixi/core';
 import { IRenderer } from '@pixi/core/lib/IRenderer';

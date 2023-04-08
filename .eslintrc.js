@@ -10,6 +10,9 @@ module.exports = {
     '@vue/typescript/recommended',
     'prettier',
   ],
+  globals: {
+    __BUILD_VERSION__: true,
+  },
   rules: {
     'no-console': 2,
   },

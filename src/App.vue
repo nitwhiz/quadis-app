@@ -1,3 +1,14 @@
+<template>
+  <ConsoleHost v-if="isDev && consoleVisible" />
+  <Suspense>
+    <MainView />
+    <template #fallback>Loading ...</template>
+  </Suspense>
+  <div class="version">
+    {{ version }}
+  </div>
+</template>
+
 <script setup lang="ts">
 import MainView from './views/MainView.vue';
 import ConsoleHost from './components/DevConsoleHost.vue';
@@ -27,15 +38,9 @@ if (isDev) {
     document.removeEventListener('keydown', handleConsoleOpenHandler);
   });
 }
-</script>
 
-<template>
-  <ConsoleHost v-if="isDev && consoleVisible" />
-  <Suspense>
-    <MainView />
-    <template #fallback>Loading ...</template>
-  </Suspense>
-</template>
+const version = __BUILD_VERSION__;
+</script>
 
 <style lang="scss">
 @import url('https://fonts.googleapis.com/css2?family=Nunito&family=Press+Start+2P&display=swap');
@@ -77,6 +82,18 @@ body {
   .main {
     height: 100%;
     width: 100%;
+  }
+
+  .version {
+    position: absolute;
+
+    bottom: 8px;
+    right: 8px;
+
+    color: #333;
+    font-size: 8px;
+
+    z-index: 1000;
   }
 }
 

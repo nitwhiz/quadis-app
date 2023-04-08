@@ -4,7 +4,8 @@ WORKDIR /app
 
 COPY ./ /app
 
-RUN npm -g install pnpm@7.13.5 && \
+RUN apk --no-cache add git && \
+    npm -g install pnpm@7.13.5 && \
     pnpm install && \
     pnpm build
 

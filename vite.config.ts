@@ -2,6 +2,14 @@ import { defineConfig } from 'vitest/config';
 import vue from '@vitejs/plugin-vue';
 import strip from '@rollup/plugin-strip';
 import eslintPlugin from 'vite-plugin-eslint';
+import * as child from 'child_process';
+import { name, version } from './package.json';
+
+const commitHash = child
+  .execSync('git rev-parse --short HEAD')
+  .toString()
+  .trimEnd();
+const buildVersion = `${name} v${version}+git.${commitHash}`;
 
 export default defineConfig((env) => ({
   plugins: [
@@ -14,6 +22,9 @@ export default defineConfig((env) => ({
     vue(),
     eslintPlugin(),
   ],
+  define: {
+    __BUILD_VERSION__: JSON.stringify(buildVersion),
+  },
   server: {
     host: '0.0.0.0',
     hmr: false,
