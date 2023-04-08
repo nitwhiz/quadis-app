@@ -6,10 +6,10 @@ import eslintPlugin from 'vite-plugin-eslint';
 export default defineConfig((env) => ({
   plugins: [
     env.mode === 'production'
-      ? strip({
+      ? (strip({
           include: ['src/**/*.ts'],
           functions: ['DevDataCollector.*', '*Logger.debug', '*Logger.info'],
-        })
+        }) as Plugin)
       : undefined,
     vue(),
     eslintPlugin(),
