@@ -1,15 +1,15 @@
-FROM node:16.18.0-alpine3.16 as builder
+FROM node:18.15.0-alpine3.17 as builder
 
 WORKDIR /app
 
 COPY ./ /app
 
 RUN apk --no-cache add git && \
-    npm -g install pnpm@7.13.5 && \
+    npm -g install pnpm@8.1.1 && \
     pnpm install && \
     pnpm build
 
-FROM nginx:1.23.1-alpine
+FROM nginx:1.23.4-alpine3.17-slim
 
 RUN apk --no-cache add jq
 
